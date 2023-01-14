@@ -227,7 +227,7 @@
 
       var maxSeals = 5;
       var numSeals = 0;
-      var requiredSealKills = 15;
+      var requiredSealKills = 10;
       var sealPositions = [];
       /*
         {
@@ -682,10 +682,10 @@
           // Update the penguin's rotation
           if (rightHandPosition.pip.x > 0.75) {
             // Turn left
-            penguinRotation += 0.1;
+            penguinRotation += 0.05;
           } else if (rightHandPosition.pip.x < 0.25) {
             // Turn right
-            penguinRotation -= 0.1;
+            penguinRotation -= 0.05;
           } else {
             // Aim crosshair
             // [0.75 - 0.25] for aiming crosshair x rotation, mappping to [-0.25, 0.25] radians off center
@@ -806,6 +806,12 @@
               penguinLives--;
 
               console.log("Seal hit the penguin");
+
+              if (penguinLives <= 0) {
+                // Game over
+                console.log("Game over");
+                document.getElementById("overlay-lose").style.display = "block";
+              }
             }
           }
         });
@@ -862,9 +868,10 @@
 
                   if (requiredSealKills <= 0) {
                     // End the game
-                    alert("You win!");
+                    document.getElementById("overlay-win").style.display =
+                      "block";
                   } else {
-                    if (requiredSealKills > numSeals && numSeals < maxSeals) {
+                    if (requiredSealKills >= numSeals && numSeals < maxSeals) {
                       // Add a seal TODO: Add a seal
                       // find an inactive seal
                       const inactiveSeal = sealPositions.find(
@@ -952,7 +959,7 @@
         // // camera variables
         // outputHTML += "cameraLookAtPoint: " + cameraLookAtPoint + "<br>";
 
-        // game variables 
+        // game variables
         outputHTML += "requiredSealKills: " + requiredSealKills + "<br>";
 
         // Display the output
