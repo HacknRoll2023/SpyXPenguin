@@ -5,82 +5,81 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
-const helpButton = document.getElementById("helpButton");
-const startButton = document.getElementById("startButton");
-const closeButton = document.getElementById("closeButton");
-
-helpButton.addEventListener("click", ()=> {
-    document.getElementsByClassName("popup")[0].style.display = "flex";
-});
-
-startButton.addEventListener("click", ()=> {
-    location.href = './intro/intro.html'; // TODO: change 
-});
-
-closeButton.addEventListener("click", ()=> {
-    document.getElementsByClassName("popup")[0].style.display = "none";
-});
-
-
 // Scene
-let threeCamera, scene, renderer, animationId;
+let threeCamera, scene, renderer, textureLoader, animationId;
 var sceneLoaded = false;
 
-var penguin;
+var numOfClicks = 0;
 
-function visitPage() {
-    window.location = "index.html";
-}
+// Models
+var penguin, telephone;
 
-function init() {
+const captionContainer = document.getElementById("captionContainer");
+const nextButton = document.getElementById("next");
+const caption = document.getElementById("caption");
+const audio = document.getElementById("bgm");
+
+function initThree() {
     const container = document.createElement("div");
     document.body.appendChild(container);
-    document.getElementsByClassName("popup")[0].style.display = "none";
+    container.click;
+    audio.play();
 
     threeCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 20);
-    threeCamera.position.set(-1.2, 0.3, -0.2);
-    // rotate camera to face the penguin
-    threeCamera.lookAt(0, 0.3, 0);
+    threeCamera.position.set(2, 1, 3);
 
     setTimeout(() => {
         // replace with game loop later
         render();
+        loadCaptionContainer();
     }, 1000);
+
+    // rotate camera to face the penguin
+    threeCamera.zoom = 0.5;
 
     scene = new THREE.Scene();
 
     // Load the background
-    new RGBELoader().setPath("./textures/equirectangular/").load("kloppenheim_06_puresky_2k.hdr", function (texture) {
+    new RGBELoader().setPath("./../textures/equirectangular/").load("kloppenheim_06_puresky_2k.hdr", function (texture) {
         texture.mapping = THREE.EquirectangularReflectionMapping;
 
         scene.background = texture;
         scene.environment = texture;
+
         render();
 
         // load in models ---------------------------------------------------------------
         // model set up
         const dracoLoader = new DRACOLoader();
-        dracoLoader.setDecoderPath("./jsm/libs/draco/");
+        dracoLoader.setDecoderPath("../jsm/libs/draco/");
 
-        const loader = new GLTFLoader().setPath("./models/");
+        const loader = new GLTFLoader().setPath("../models/");
         loader.setDRACOLoader(dracoLoader);
 
         // Penguin model
-        loader.load("spyxpenguin.gltf", function (gltf) {
-            console.log(gltf);
+        loader.load("Penguin.gltf", function (gltf) {
             penguin = gltf.scene;
-            penguin.scale.set(0.1, 0.1, 0.1);
-            penguin.position.set(0, 0, 0);
-            penguin.setRotationFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
+            penguin.scale.set(0.16, 0.16, 0.16);
+            penguin.position.set(0.75, 0.45, 2);
+            //penguin.rotation.set(0, (-10 / 180) * Math.PI, 0);
             scene.add(penguin);
-            spinModel(3);
+            threeCamera.lookAt(penguin.position);
 
             setTimeout(() => {
+                spin(2);
                 render();
             }, 1000);
         });
 
-        var groundTexture = new THREE.TextureLoader().load("./textures/textureImages/snowTexture3.jpg");
+        // Telephone model
+        loader.load("telephone.glb", function (gltf) {
+            telephone = gltf.scene;
+            telephone.position.set(0, 0.45, 1);
+            scene.add(telephone);
+            telephone.visible = false;
+        });
+
+        var groundTexture = new THREE.TextureLoader().load("./../textures/textureImages/snowTexture3.jpg");
         groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
         groundTexture.repeat.set(10000, 10000);
         groundTexture.anisotropy = 64;
@@ -105,6 +104,7 @@ function init() {
     renderer.toneMappingExposure = 1;
     renderer.outputEncoding = THREE.sRGBEncoding;
     container.appendChild(renderer.domElement);
+    threeCamera.lookAt(0, 0, 0);
     window.addEventListener("resize", onWindowResize);
 
     sceneLoaded = true;
@@ -123,13 +123,43 @@ function render() {
     renderer.render(scene, threeCamera);
 }
 
-function spinModel(time) {
+initThree();
+render();
+
+function loadCaptionContainer() {
+    captionContainer.style.display = "block";
+}
+
+nextButton.addEventListener("click", () => {
+    numOfClicks++;
+    switch (numOfClicks) {
+        case 1:
+            caption.innerHTML = "riiiiiiiiiiiiiiiiiiiing";
+            telephone.visible = true; 
+            threeCamera.zoom = 1.5;
+            threeCamera.updateProjectionMatrix();
+            cancelAnimationFrame(animationId);
+            penguin.rotation.y = Math.PI * 2;
+            render();
+            break;
+        case 2:
+            caption.innerHTML = "Penguin: Hello?";
+            threeCamera.lookAt(penguin.position.x, penguin.position.y, penguin.position.z);
+            render();
+            break;
+        case 3:
+            caption.innerHTML = "Seal: Give us fishes... Or your son is NEVER coming back.";
+            break;
+        default:
+            location.href = "../"; // TODO: change to next page
+            break;
+    }
+});
+
+function spin(time) {
     time *= 0.001; // convert time param to seconds
     penguin.rotation.y = time;
     // Render the scene to canvas
     renderer.render(scene, threeCamera);
-    animationId = requestAnimationFrame(spinModel);
+    animationId = requestAnimationFrame(spin);
 }
-
-init();
-render();
