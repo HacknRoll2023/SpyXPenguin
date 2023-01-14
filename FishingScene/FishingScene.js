@@ -13,11 +13,10 @@ const loader = new GLTFLoader().setPath("../models/");
 let camera, scene, renderer;
 
 // Models
-var penguin, island;
-var fish;
+var penguin, island, fish, fish2;
+
 var fishes = [];
 var penguinHasFish = false;
-
 var handLabel;
 
 class Fish {
@@ -34,11 +33,11 @@ class Fish {
     }
 }
 
-// Game state
+// Game state variables
 var gameState = "idle";             // idle, play, end
 const clock = new THREE.Clock();
 const maxtime = 60;
-const targetFish = 10;
+const numTargetFish = 10;
 var numFishCaught = 0;
 
 // To update values and text on html
@@ -100,9 +99,8 @@ function init() {
             scene.add(penguin);
         });
 
-        const axes = new THREE.AxesHelper(5);
-        scene.add(axes);
-
+        // const axes = new THREE.AxesHelper(5);
+        // scene.add(axes);
         });
 
     // renderer
@@ -115,12 +113,12 @@ function init() {
     container.appendChild(renderer.domElement);
 
     // // controls
-    // const controls = new OrbitControls(camera, renderer.domElement);
-    // controls.addEventListener("change", render); // use if there is no animation loop
-    // controls.minDistance = 0.2;
-    // controls.maxDistance = 10;
-    // controls.target.set(0, 0.25, 0);
-    // controls.update();
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.addEventListener("change", render); // use if there is no animation loop
+    controls.minDistance = 0.2;
+    controls.maxDistance = 10;
+    controls.target.set(0, 0.25, 0);
+    controls.update();
 
     window.addEventListener("resize", onWindowResize);
 }
@@ -143,42 +141,38 @@ export function startGame() {
     gameState = "play";
     clock.start();
     generateFish();
-    checkHand();
 }
 
 export function updateScene(x, y, label) {
     updatePenguin(x, y, label);
     if (gameState == "play") {
         updateFish();
-        // checkHand();
+        checkHand();
     }
-    updateTimer();
+    updateText();
     render();
 }
 
 function checkHand() {
-    updateTime.innerText = penguinHasFish;
-
     // console.log(penguin.position.x + " " + penguin.position.y);
     if (handLabel == "open" && penguin.position.x > 0.8 && penguin.position.y > 0.4 && penguinHasFish) {
         // Penguin is in drop off zone and can drop off fish
         console.log("Fish released!");
+        showFishDropOff();
         penguinHasFish = false;
-        // increase fish caught count
+        numFishCaught += 1;
+        console.log(numFishCaught);
     }
     if (handLabel == "closed" && !penguinHasFish) {
         // Penguin is in close proximity to fish and can catch it
-        var index = -1;
-        index = fishIsNear();
-        console.log(index);
-        if (index > -1) {
+        var fishIdx = fishIsNear()
+        // console.log(fishIdx);
+        if (fishIdx > -1) {
             console.log("Fish caught!");
             penguinHasFish = true;
-            console.log(penguinHasFish);
-            fishes.splice(index, 1);
+            fishes.splice(fishIdx, 1);
         }
     }
-    setTimeout(checkHand, 250);
 }
 
 function fishIsNear() {
@@ -186,32 +180,35 @@ function fishIsNear() {
     var penguinBB2 = new THREE.Box2(new THREE.Vector2(penguinBB.min.x,penguinBB.min.y), new THREE.Vector2(penguinBB.max.x,penguinBB.max.y));
     // console.log(penguinBB2);
 
+    var res = -1;
     fishes.forEach((fishObj, index) => {
         // Check if any of the other BBs intersects with this bb
         var fishBB = new THREE.Box3().setFromObject(fishObj.fish);
-        fishBB = new THREE.Box2(new THREE.Vector2(fishBB.min.x,fishBB.min.y), new THREE.Vector2(fishBB.max.x,fishBB.max.y));
+        var fishBB2 = new THREE.Box2(new THREE.Vector2(fishBB.min.x,fishBB.min.y), new THREE.Vector2(fishBB.max.x,fishBB.max.y));
         // console.log(fishObj.box);
         // console.log(index);
         // updateTime.innerHTML = fishObj.xcoord + " " + fishObj.ycoord + "</br> " + penguin.position.x + " " + penguin.position.y;
 
-        if (penguinBB2.intersectsBox(fishBB)) {
+        if (penguinBB2.intersectsBox(fishBB2)) {
             console.log("collision!")
-            console.log(index)
             scene.remove(fishObj.fish);
-            return index;
+            // fishes.splice(index, 1);
+            res = index;
         }
     });
+    return res;
 }
 
 function updatePenguin(x,y,label) {
-    penguin.position.set(x, y, 0);
-    handLabel = label;
+    if (penguin) {
+        penguin.position.set(x, y, 0);
+        handLabel = label;
+    }
 }
 
 function generateFish() {
     if (gameState == "play") {
         // Fish model
-        // console.log(gameState + " Making fish...")
         const glbPath2 = "Fish.gltf";
         loader.load(glbPath2, function (gltf) {
             fish = gltf.scene;
@@ -229,7 +226,7 @@ function generateFish() {
             scene.add(fish);
         })
     }
-    setTimeout(generateFish, 4000); // Generate new fish every second
+    setTimeout(generateFish, 3000); // Generate new fish every 3s
 }
 
 function updateFish() {
@@ -243,15 +240,41 @@ function updateFish() {
     }
 }
 
-function updateTimer() {
+function updateText() {
     if (gameState=="play") {
         var timeleft = maxtime-Math.round(clock.getElapsedTime());
-        // updateTime.innerText = timeleft + " seconds left!";
+        updateTime.innerText = timeleft + " seconds left!";
+        updateFishCount.innerText = numFishCaught + " / " + numTargetFish;
     }
-    if (timeleft <= 0) {
+    if (timeleft <= 0 || numFishCaught == numTargetFish) {
         clock.stop();
         gameState = "end";
-        updateTime.innerText = "Time's up!";
+        if (timeleft <= 0) updateTime.innerText = "Time's up!";
+        if (numFishCaught == numTargetFish) updateTime.innerText = "Challenge complete! Well done!";
     }
     updateFish();   // to clean up area?
+}
+
+function showFishDropOff() {
+    // Fish model
+    const glbPath2 = "Fish.gltf";
+    loader.load(glbPath2, function (gltf) {
+        fish2 = gltf.scene;
+        fish2.scale.set(0.03, 0.03, 0.03);
+        fish2.position.set(2.35, 1.45, -0.5);
+        scene.add(fish2);
+        
+        animateFishDropOff();
+    })
+}
+
+function animateFishDropOff() {
+    if (fish2.position.y > 1.2) {
+        console.log(fish2.position.y);
+        fish2.position.y -= 0.05;
+        render();
+        setTimeout(animateFishDropOff, 100);
+    } else {
+        scene.remove(fish2);
+    }
 }

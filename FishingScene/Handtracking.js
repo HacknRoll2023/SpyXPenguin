@@ -145,10 +145,12 @@ function checkHand() {
 
         // calculate the center
         // bbox is x, y width, height
-        handPos.x = filteredPreds[0].bbox[0] + filteredPreds[0].bbox[2] / 2
-        handPos.y = filteredPreds[0].bbox[1] + filteredPreds[0].bbox[3] / 2
-
         handLabel = filteredPreds[0].label; // closed, open, point
+
+        // if (handLabel != "closed") {
+            handPos.x = filteredPreds[0].bbox[0] + filteredPreds[0].bbox[2] / 2
+            handPos.y = filteredPreds[0].bbox[1] + filteredPreds[0].bbox[3] / 2
+        // }
 
         // update that newHand detected is true
         newHand = true;
@@ -167,12 +169,12 @@ function moveEverything() {
         }
 
     if (handPos.x > 50 && handPos.x < 450) {
-            handXScaled = Math.round((handPos.x - 250) /65 * 100)/100
+            handXScaled = Math.round((handPos.x - 250) /65 * 10000)/10000
             penguinPos.x = handXScaled
         }
 
     if (handPos.y > 105 && handPos.y < 300) {
-            handYScaled = Math.round(-(handPos.y - 180) /80 * 100)/100
+            handYScaled = Math.round(-(handPos.y - 180) /80 * 10000)/10000
             penguinPos.y = handYScaled
         }
     // console.log(handXScaled + " --- " + handYScaled);
