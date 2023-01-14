@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "../build/three.module.js",
+                    "three/addons/": "../jsm/"
+                }
+            }
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    </head>
+
+    <body>
+        <div id="caption" class="popup">
+            <button id="next" onclick="location.href = '../findSonScene/findSon.html'">Next</button>
+        </div>
+        <script type="module" src="./interrogationScene.js"></script>
+        <style>
+            body {
+                margin: 0;
+                font-family: sans-serif;
+            }
+
+            .popup {
+                text-align: center;
+                padding: 5% 15%;
+                border-radius: 20px;
+                display: flex;
+                position: absolute;
+                bottom: 0;
+            }
+
+            button {
+                background: url("../textures/textureImages/snowTexture.jpg") no-repeat;
+                font-size: 16px;
+                border-radius: 20px;
+                border: transparent 2px;
+                border: none;
+                padding: 15px 32px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 20px;
+                margin: 4px 2px;
+            }
+
+            button:hover {
+                cursor: pointer;
+                text-decoration: underline;
+            }
+
+            #caption {
+            }
+        </style>
+    </body>
+</html>
