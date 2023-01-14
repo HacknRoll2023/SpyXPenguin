@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Penguin Fishing Scene</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+    />
+    <link type="text/css" rel="stylesheet" href="FishingScene.css" />
+    <link rel="icon" href="../images/icon.png">
+    <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "../build/three.module.js",
+          "three/addons/": "../jsm/"
+        }
+      }
+    </script>
+    <script type="module" src="FishingScene.js"></script>
+    <script type="module" src="Handtracking.js"></script>
+    <!-- <svg hidden id="fishPath" width="841" height="487" viewBox="0 0 841 487" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M150 126C118.675 88.4446 37 152 31 165C31 165 23.2632 183.605 25.5 195.5C30.33 221.184 59.1557 219.89 84 228C138.568 245.813 230 211 230 211C230 211 288.506 200.271 311 223C327.766 239.941 332.455 257.292 330 281C328.639 294.144 327.436 302.829 319 313C313.664 319.433 309.232 321.812 302 326C285.028 335.828 253 337 253 337C253 337 185.68 328.482 162 356C132.963 389.742 149 447 177 469C205 491 248 487 265 482C282 477 306.239 464.679 330 449C354.749 432.669 362.015 414.283 388 400C431.378 376.156 467.4 362.2 513 379C570 400 669 417 687 433C701.4 445.8 767.5 433 767.5 433C767.5 433 834.7 421.4 839.5 379C845.5 326 821.5 299.5 806.5 281C791.5 262.5 767 244 734.5 262.5C702 281 630 249 591 281C552 313 594.5 327.5 495.5 313C396.5 298.5 321 299.5 302 281C283 262.5 248 244 205 262.5C170.6 277.3 122.667 281 103 281C83.3333 281 35 271 17 298.5C-1 326 32.1667 363 88.5 379C144.833 395 272 421.6 330 400C402.5 373 440.959 326.577 513 281C611.342 218.784 728.5 157 767.5 126C806.5 95 782 20 734.5 8.00001C687 -3.99999 591 -0.999994 564 29C537 59 546.286 99.0993 513 126C493.027 142.142 477.034 143.722 453.5 154C416.68 170.081 385 228 357.5 191C330 154 302 126 302 126C302 126 283 101 205 80C127 59 88.5 80 88.5 80C88.5 80 -27 98 7.5 126C42 154 220 178.5 253 175.5C286 172.5 594 104.514 627 154C660 203.486 572.5 239 513 239C453.5 239 209.237 321.036 162 191C153.187 166.738 166.534 145.823 150 126Z" stroke="black"/>
+      </svg> -->
+
+    <!-- <svg id="fishPath" width="555" height="534" viewBox="0 0 555 534" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M554.5 267C554.5 414.166 430.501 533.5 277.5 533.5C124.499 533.5 0.5 414.166 0.5 267C0.5 119.834 124.499 0.5 277.5 0.5C430.501 0.5 554.5 119.834 554.5 267Z" stroke="black"/>
+      </svg> -->
+
+  </head>
+  <body>
+    <div id="info">
+      <p id="fishCaught">Catch some fish!</p>
+      <p><i class="fas fa-fish"></i> <span id="updatefish">0 / 10</span> fish caught</p>
+      <p><i class="fas fa-clock"></i> <span id="updatetime">60 seconds left!</span></p>
+    </div>
+
+    <div class="mb10">
+      <!-- <button
+        onclick="toggleVideo()"
+        id="trackbutton"
+        class="bx--btn bx--btn--secondary"
+        type="button"
+      >
+        Toggle Video
+      </button> -->
+    </div>
+
+    <!-- Video element to show the user video -->
+    <video
+      hidden="true"
+      width="500"
+      height="400"
+      class="videobox canvasbox"
+      autoplay="autoplay"
+      id="myvideo"
+    ></video>
+    <canvas id="canvas" class="border canvasbox"></canvas>
+    <div id="fishingscene"></div>
+
+    <script src="https://unpkg.com/carbon-components@latest/scripts/carbon-components.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/handtrackjs/dist/handtrack.min.js"></script>
+
+    <script
+      async
+      src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"
+    ></script>
+
+    <script
+      async
+      src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"
+    ></script>
+  </body>
+</html>

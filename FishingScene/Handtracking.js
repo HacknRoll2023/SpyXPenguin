@@ -1,4 +1,4 @@
-import { updateScene } from './FishingScene.js';
+import { startGame, updateScene } from './FishingScene.js';
 ///// HANDTRACK VARIABLES ////////
 
 // get the video and canvas and set the context for the canvas
@@ -66,6 +66,7 @@ function startVideo() {
             isVideo = true
             // runDetection defined in this script below
             runDetection()
+            startGame()
         } else {
             // optional update of text on screen to indicate video is not enabled
             // updateNote.innerText = "Please enable video"
