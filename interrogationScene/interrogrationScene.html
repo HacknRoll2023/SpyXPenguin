@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "../build/three.module.js",
+                    "three/addons/": "../jsm/"
+                }
+            }
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    </head>
+
+    <body>
+        <div id="captionContainer" class="popup">
+            <p id="caption">Penguin: Where is my son? I don't see him here!</p>
+            <button id="next">Next</button>
+        </div>
+        <audio id="bgm" src="../music/soundscrate-final-fight.mp3" loop preload="auto"></audio>
+        <script type="module" src="./interrogationScene.js"></script>
+        <style>
+            body {
+                margin: 0;
+                font-family: sans-serif;
+                width: 100vw;
+                font-size: 23px;
+            }
+
+            .popup {
+                text-align: center;
+                border-radius: 20px;
+                display: flex;
+                bottom: 0;
+                background-color: rgba(255, 255, 255, 0.5);
+                position: absolute;
+            }
+
+            button {
+                background: url("../textures/textureImages/snowTexture.jpg") no-repeat;
+                font-size: 16px;
+                border-radius: 20px;
+                border: transparent 2px;
+                border: none;
+                padding: 15px 32px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 20px;
+                margin: 4px 2px;
+            }
+
+            button:hover {
+                cursor: pointer;
+                text-decoration: underline;
+            }       
+
+            #captionContainer {
+                width: 100vw;
+                display: none;
+            }
+
+            canvas {
+                width: 100vw;
+            }
+        </style>
+    </body>
+</html>

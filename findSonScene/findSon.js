@@ -24,7 +24,7 @@ closeButton.addEventListener("click", () => {
 function resetCamera() {
     console.log("reset");
     camera.zoom = 1;
-    camera.lookAt(0,0,0);
+    camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
     render();
 }
@@ -43,13 +43,15 @@ var tree, penguin;
 var spaceCount = 0;
 
 // Game state
-var foundPenguin = false, gameHasStarted = false;
+var foundPenguin = false,
+    gameHasStarted = false;
 
 init();
 render();
 
 function init() {
     const container = document.createElement("div");
+    const audio = document.getElementById("bgm");
     document.body.appendChild(container);
 
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 20);
@@ -64,7 +66,7 @@ function init() {
 
         scene.background = texture;
         scene.environment = texture;
-
+        audio.play();
         render();
 
         // load in models ---------------------------------------------------------------
@@ -153,14 +155,14 @@ function onResults(results) {
     canvasCtx.translate(canvasElement.width, 0);
     canvasCtx.scale(-1, 1);
     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-    
-    canvasCtx.font = "20px serif";
-    canvasCtx.fillText("<", 0, canvasElement.clientHeight/2);
-    canvasCtx.fillText(">", canvasElement.clientWidth, canvasElement.clientHeight/2);
-    canvasCtx.fillText("^", canvasElement.clientWidth/2, 30);
-    canvasCtx.fillText("v", canvasElement.clientWidth/2, 170);
 
-    console.log(canvasElement.clientLeft)
+    canvasCtx.font = "20px serif";
+    canvasCtx.fillText("<", 0, canvasElement.clientHeight / 2);
+    canvasCtx.fillText(">", canvasElement.clientWidth, canvasElement.clientHeight / 2);
+    canvasCtx.fillText("^", canvasElement.clientWidth / 2, 30);
+    canvasCtx.fillText("v", canvasElement.clientWidth / 2, 170);
+
+    console.log(canvasElement.clientLeft);
 
     if (results.multiHandLandmarks) {
         for (const landmarks of results.multiHandLandmarks) {
@@ -248,14 +250,14 @@ function onResults(results) {
                         // Do something with the position...
                         console.log("found penguin");
                         //foundPenguin = true;
-                        
-                        setTimeout(function() {
+
+                        setTimeout(function () {
                             success.style.display = "block";
                             //your code to be executed after 1 second
-                          }, 2500);
+                        }, 2500);
                     } else {
                         //foundPenguin = false;
-                        console.log("out of view")
+                        console.log("out of view");
                     }
                 }
             }
