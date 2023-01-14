@@ -35,7 +35,7 @@ function visitPage() {
 function init() {
     const container = document.createElement("div");
     document.body.appendChild(container);
-    //audio.play();
+    document.getElementsByClassName("popup")[0].style.display = "none";
 
     threeCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 20);
     threeCamera.position.set(-1.2, 0.3, -0.2);
