@@ -549,7 +549,6 @@
                 snowballProjectile2.position.set(0, -0.2, 0);
                 scene.add(snowballProjectile2);
                 snowballs.push(snowballProjectile2);
-
               }
             });
 
@@ -567,6 +566,8 @@
                 scene.add(sealEnemy);
                 seals.push(sealEnemy);
               }
+
+              initSeals();
             });
 
             var groundTexture = new THREE.TextureLoader().load(
@@ -611,6 +612,33 @@
         window.addEventListener("resize", onWindowResize);
 
         sceneLoaded = true;
+      }
+
+      function initSeals() {
+        // Init 5 seals
+        for (var i = 0; i < maxSeals; i++) {
+          // pick a random rotation
+          var randomRotation = Math.random() * 2 * Math.PI;
+
+          // pick a random distance from the center between 8 and 10
+          var randomDistance = Math.random() * 2 + 8;
+
+          // calculate the x and z position
+          var x = Math.cos(randomRotation) * randomDistance;
+          var z = Math.sin(randomRotation) * randomDistance;
+
+          // set the position of the seal
+          seals[i].position.set(x, 0.1, z);
+
+          // set the rotation of the seal to face the center
+          seals[i].rotation.y = Math.atan2(-x, -z);
+
+          // increment numSeals
+          numSeals++;
+
+          // set the seal to be active
+          sealPositions[i].isActive = true;
+        }
       }
 
       function onWindowResize() {
@@ -707,7 +735,6 @@
 
             console.log(snowballs[snowball.idx].position);
 
-
             // Set the snowball's rotation the angle between the penguin and the crosshair
             snowballs[snowball.idx].rotation.y =
               penguinRotation + crossHairAngleOffset.x;
@@ -753,9 +780,22 @@
               seals[seal.idx].position.z <
                 penguin.position.z + (sealRadius + penguinHitRadius)
             ) {
-              // Seal hit by penguin
+              // Seal hit the penguin
               seal.isActive = false;
               numSeals--;
+
+              // Reset seal position
+              seals[seal.idx].position.set(
+                Math.random() * 10 - 5,
+                0,
+                Math.random() * 10 - 5
+              );
+
+              // Reset seal rotation to face penguin
+              seals[seal.idx].rotation.y = Math.atan2(
+                penguin.position.x - seals[seal.idx].position.x,
+                penguin.position.z - seals[seal.idx].position.z
+              );
 
               console.log("Seal hit the penguin");
             }
@@ -788,14 +828,26 @@
                   snowballs[snowball.idx].position.z <
                     seals[seal.idx].position.z + (sealRadius + snowballRadius)
                 ) {
-                  // Set seal to inactive
-                  seal.isActive = false;
-
+                  // Snowball ----------------
                   // Set snowball to inactive
                   snowball.isActive = false;
 
                   // Update the number of snowballs
                   numSnowballs--;
+
+                  // Seal ----------------
+                  // Update the seal's position
+                  seals[seal.idx].position.set(
+                    Math.random() * 10 - 5,
+                    0,
+                    Math.random() * 10 - 5
+                  );
+
+                  // Update the snowball's position
+                  snowballs[snowball.idx].position.set(0, -10, 0);
+
+                  // Set seal to inactive
+                  seal.isActive = false;
 
                   // Update the number of seals
                   numSeals--;
@@ -803,11 +855,14 @@
                   // Reduce requiredSealKills by 1
                   requiredSealKills--;
 
-                  // Update the seal's position
-                  seal.position.set(0, -10, 0);
-
-                  // Update the snowball's position
-                  snowballs[snowball.idx].position.set(0, -10, 0);
+                  if (requiredSealKills <= 0) {
+                    // End the game
+                    alert("You win!");
+                  } else {
+                    if (requiredSealKills > numSeals && numSeals < maxSeals) {
+                      // Add a seal TODO: Add a seal
+                    }
+                  }
                 }
               }
             });
