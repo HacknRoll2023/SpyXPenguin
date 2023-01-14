@@ -204,7 +204,7 @@
           0.25,
           20
         );
-        threeCamera.position.set(1, 0.3, 0);
+        threeCamera.position.set(-1, .5, 0);
         // rotate camera to face the penguin
         threeCamera.lookAt(2, 2, 2);
 
@@ -249,18 +249,8 @@
             const loader = new GLTFLoader().setPath("../models/");
             loader.setDRACOLoader(dracoLoader);
 
-            // FishingIsland model
-            const glbPathIsland = "FishingIsland.gltf";
-            loader.load(glbPathIsland, function (gltf) {
-              island = gltf.scene;
-              island.scale.set(0.1, 0.1, 0.1);
-              island.position.set(1, -0.1, 0.3);
-              island.rotation.set(0, 90, 0);
-              scene.add(island);
-            });
-
             // Penguin model
-            const glbPath = "Penguin.gltf";
+            const glbPath = "PenguinSleigh.gltf";
             loader.load(glbPath, function (gltf) {
               console.log(gltf);
               penguin = gltf.scene;
@@ -269,6 +259,22 @@
               penguin.rotation.set(0, (-10 / 180) * Math.PI, 0);
               scene.add(penguin);
             });
+
+            // Scenery
+
+            var groundTexture = new THREE.TextureLoader().load( "./../textures/textureImages/snowTexture3.jpg" );
+			groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+			groundTexture.repeat.set( 10000, 10000 );
+			groundTexture.anisotropy = 64;
+			groundTexture.encoding = THREE.sRGBEncoding;
+
+			var groundMaterial = new THREE.MeshStandardMaterial( { map: groundTexture } );
+
+			var mesh = new THREE.Mesh( new THREE.PlaneBufferGeometry( 10000, 10000 ), groundMaterial );
+			mesh.position.y =0;
+			mesh.rotation.x = - Math.PI / 2;
+			mesh.receiveShadow = true;
+			scene.add( mesh );
           });
 
         // renderer
@@ -283,8 +289,8 @@
         // Orbit controls
         const controls = new OrbitControls(threeCamera, renderer.domElement);
         controls.addEventListener("change", render); // use if there is no animation loop
-        controls.minDistance = 0.2;
-        controls.maxDistance = 10;
+        controls.minDistance = 1;
+        controls.maxDistance = 5;
         controls.target.set(0, 0.25, 0);
         controls.update();
 
