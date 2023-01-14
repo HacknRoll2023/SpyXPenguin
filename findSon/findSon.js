@@ -1,7 +1,5 @@
 import * as THREE from "three";
 
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
@@ -17,14 +15,14 @@ videoElement.style.display = "none";
 const digitPositions = document.getElementsByClassName("digit-position__value");
 
 // Scene
-let camera, scene, renderer;
+let camera, scene, renderer, clock;
 
 // Models
-var fish, penguin, island, rod, bobber, alertModel, seal, babySeal;
+var tree, penguin;
 
 var spaceCount = 0;
 
-let animationId = null;
+var foundPenguin = false;
 
 init();
 render();
@@ -35,12 +33,13 @@ function init() {
     document.body.appendChild(container);
 
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 20);
-    camera.position.set(1, 0.3, 0);
+    camera.position.set(10, 2, 8);
+
     // rotate camera to face the penguin
-    camera.lookAt(2, 2, 2);
+    //camera.lookAt(2, 2, 2);
 
     scene = new THREE.Scene();
-    const clock = new THREE.Clock();
+    clock = new THREE.Clock();
 
     // Load the background
     new RGBELoader().setPath("./../textures/equirectangular/").load("snowy_hillside_02_4k.hdr", function (texture) {
@@ -59,31 +58,50 @@ function init() {
         const loader = new GLTFLoader().setPath("../models/");
         loader.setDRACOLoader(dracoLoader);
 
-        // FishingIsland model
-        const glbPathIsland = "FishingIsland.gltf";
-        loader.load(glbPathIsland, function (gltf) {
-            island = gltf.scene;
-            island.scale.set(0.1, 0.1, 0.1);
-            island.position.set(1, -0.1, 0.3);
-            island.rotation.set(0, 90, 0);
-            scene.add(island);
+        // Tree model
+        loader.load("HangingTree.gltf", function (gltf) {
+            console.log(gltf);
+            tree = gltf.scene;
+            tree.scale.set(0.02, 0.02, 0.02);
+            tree.position.set(0, 0, 0);
+            scene.add(tree);
         });
 
         // Penguin model
-        const glbPath = "hangingBaby.glb";
-        loader.load(glbPath, function (gltf) {
+        loader.load("hangingBaby.glb", function (gltf) {
             console.log(gltf);
             penguin = gltf.scene;
-            penguin.scale.set(0.06, 0.06, 0.06);
-            penguin.position.set(0.08, 0.02, 0.03);
-            penguin.rotation.y = (-10/180)  * Math.PI;
-            //penguin.setRotation(0, (-10 / 180) * Math.PI, 0);
+            penguin.scale.set(0.006, 0.006, 0.006);
+            penguin.position.set(0, 0.05, 0.03);
+            penguin.rotation.y = (-10 / 180) * Math.PI;
             scene.add(penguin);
-            
-            swingPenguin(2);
+            //penguin.lookAt(camera.position)
         });
 
-        
+        // add extra trees
+        loader.load("HangingTree.gltf", function (gltf) {
+            console.log(gltf);
+            tree = gltf.scene;
+            tree.position.set(5, 0.02, 0.02);
+            tree.scale.set(0.02, 0.02, 0.02);
+            scene.add(tree);
+        });
+
+        loader.load("HangingTree.gltf", function (gltf) {
+            console.log(gltf);
+            tree = gltf.scene;
+            tree.position.set(-3.2, -0.02, 0.02);
+            tree.scale.set(0.02, 0.02, 0.02);
+            scene.add(tree);
+        });
+
+        loader.load("HangingTree.gltf", function (gltf) {
+            console.log(gltf);
+            tree = gltf.scene;
+            tree.position.set(2.2, 0.02, 0.02);
+            tree.scale.set(0.02, 0.02, 0.02);
+            scene.add(tree);
+        });
     });
 
     // renderer
@@ -94,15 +112,7 @@ function init() {
     renderer.toneMappingExposure = 1;
     renderer.outputEncoding = THREE.sRGBEncoding;
     container.appendChild(renderer.domElement);
-
-    // controls
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.addEventListener("change", render); // use if there is no animation loop
-    controls.minDistance = 0.2;
-    controls.maxDistance = 10;
-    controls.target.set(0, 0.25, 0);
-    controls.update(); 
-
+    camera.lookAt(0, 0, 0);
     window.addEventListener("resize", onWindowResize);
 }
 
@@ -117,22 +127,6 @@ function onWindowResize() {
 
 function render() {
     renderer.render(scene, camera);
-}
-
-// animate baby penguin
-function swingPenguin(time) {
-    const speed = 0.001;
-    time *= 0.001; // convert time param to seconds
-    penguin.rotation.x += time * speed;
-    penguin.rotation.y += time * speed;
-
-    const frequency = 0.00002;
-    const acceleration = -penguin.rotation.z * frequency;
-    penguin.speed += acceleration;
-    //penguin.position.x += time * penguin.speed;
-    // Render the scene to canvas
-    renderer.render(scene, camera);
-    animationId = requestAnimationFrame(swingPenguin);
 }
 
 // Game mechanics ---------------------------------------------------------------
@@ -196,18 +190,59 @@ function onResults(results) {
                     Pinky: [${results.multiHandLandmarks[i][20].x.toFixed(2)}, ${results.multiHandLandmarks[i][20].y.toFixed(2)}]
                 `;
 
-            // zoom in and out
-            if (Math.abs(results.multiHandLandmarks[i][4].x - results.multiHandLandmarks[i][8].x) > 0.04) {
-                //console.log("zoom out");
-                camera.zoom = 0.5;
-                camera.updateProjectionMatrix();
-                render();
-            } else {
-                // pinch action
-                //console.log("zoom in");
-                camera.zoom = 2;
-                camera.updateProjectionMatrix();
-                render();
+            // use left hand to  zoom in and out
+            if (isRightHand && !foundPenguin) {
+                if (Math.abs(results.multiHandLandmarks[i][4].x - results.multiHandLandmarks[i][8].x) > 0.04) {
+                    if (camera.zoom > 0.2) camera.zoom *= 0.5;
+
+                    camera.updateProjectionMatrix();
+                    render();
+                } else {
+                    // pinch action
+                    if (camera.zoom < 10) camera.zoom *= 2;
+
+                    // move up down left right
+                    if (results.multiHandLandmarks[i][4].x <= 0.2) {
+                        console.log("move left");
+                        camera.position.x += 0.1;
+                        camera.updateProjectionMatrix();
+                        render();
+                    } else if (results.multiHandLandmarks[i][4].x >= 0.8) {
+                        console.log("move right");
+                        camera.position.x -= 0.1;
+                        camera.updateProjectionMatrix();
+                        render();
+                    }
+
+                    if (results.multiHandLandmarks[i][4].y >= 0.8) {
+                        console.log("move down");
+                        camera.position.y += 0.1;
+                        camera.updateProjectionMatrix();
+                        render();
+                    } else if (results.multiHandLandmarks[i][4].y <= 0.2) {
+                        console.log("move up");
+                        camera.position.y -= 0.1;
+                        camera.updateProjectionMatrix();
+                        render();
+                    }
+
+                    camera.updateProjectionMatrix();
+                    render();
+
+                    // check if penguin is in camera view
+                    camera.updateMatrixWorld();
+                    const frustum = new THREE.Frustum();
+                    const matrix = new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+                    frustum.setFromProjectionMatrix(matrix);
+
+                    // Your 3d point to check
+                    if (frustum.containsPoint(penguin.position)) {
+                        // Do something with the position...
+                        console.log("found penguin");
+                    } else {
+                        console.log("out of view")
+                    }
+                }
             }
         }
     }
