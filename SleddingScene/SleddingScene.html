@@ -90,6 +90,8 @@
       // Game variables ------------------------------------------------------------
       var gameState = "playing";
 
+      var penguinLives = 3;
+
       // Scene variables
       var penguinPosition = {
         x: 0,
@@ -106,8 +108,8 @@
       const maxSpeed = 0.07;
 
       var targetPosition = {
-        x: 15,
-        z: 13,
+        x: 43,
+        z: 15,
       };
 
       // Controls variables
@@ -259,7 +261,7 @@
       var sceneLoaded = false;
 
       // Models
-      var penguin, alertModel, directionIndicator;
+      var penguin, alertModel, directionIndicator, fortress;
 
       function initThree() {
         const container = document.createElement("div");
@@ -338,16 +340,19 @@
               scene.add(directionIndicator);
             });
 
-            // Alert model for target destination
-            const glbPath3 = "Alert.gltf";
-            loader.load(glbPath3, function (gltf) {
-              console.log(gltf);
-              alertModel = gltf.scene;
-              alertModel.scale.set(0.6, 0.6, 0.6);
-              alertModel.position.set(targetPosition.x, 0.3, targetPosition.z);
-              alertModel.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
-              scene.add(alertModel);
-            });
+            // Add fortress model for target destination
+            const glbPath4 = "IceFortress.gltf";
+
+            // // Alert model for target destination
+            // const glbPath3 = "Alert.gltf";
+            // loader.load(glbPath3, function (gltf) {
+            //   console.log(gltf);
+            //   alertModel = gltf.scene;
+            //   alertModel.scale.set(0.6, 0.6, 0.6);
+            //   alertModel.position.set(targetPosition.x, 0.3, targetPosition.z);
+            //   alertModel.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
+            //   scene.add(alertModel);
+            // });
 
             // Scenery
 
