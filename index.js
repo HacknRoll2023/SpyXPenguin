@@ -14,7 +14,7 @@ helpButton.addEventListener("click", ()=> {
 });
 
 startButton.addEventListener("click", ()=> {
-    location.href = './'; // TODO: change 
+    location.href = './intro/intro.html'; // TODO: change 
 });
 
 closeButton.addEventListener("click", ()=> {
