@@ -12,7 +12,7 @@ var sceneLoaded = false;
 var numOfClicks = 0;
 
 // Models
-var penguin, telephone;
+var penguin, telephone, seal;
 
 const captionContainer = document.getElementById("captionContainer");
 const nextButton = document.getElementById("next");
@@ -79,6 +79,15 @@ function initThree() {
             telephone.visible = false;
         });
 
+        loader.load("SealAngry.gltf", function (gltf) {
+            seal = gltf.scene;
+            seal.scale.set(0.16, 0.16, 0.16);
+            seal.position.set(0.75, 0.45, 2);
+            seal.rotation.set(0, (180 / 180) * Math.PI, 0);
+            scene.add(seal);
+            seal.visible = false;
+        });
+
         var groundTexture = new THREE.TextureLoader().load("./../textures/textureImages/snowTexture3.jpg");
         groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
         groundTexture.repeat.set(10000, 10000);
@@ -136,22 +145,42 @@ nextButton.addEventListener("click", () => {
         case 1:
             caption.innerHTML = "riiiiiiiiiiiiiiiiiiiing";
             telephone.visible = true; 
-            threeCamera.zoom = 1.5;
+            threeCamera.zoom = 1.25;
             threeCamera.updateProjectionMatrix();
             cancelAnimationFrame(animationId);
             penguin.rotation.y = Math.PI * 2;
             render();
             break;
         case 2:
-            caption.innerHTML = "Penguin: Hello?";
+            caption.innerHTML = "Penguin: You got what you want. Where is my CHICK?!";
             threeCamera.lookAt(penguin.position.x, penguin.position.y, penguin.position.z);
             render();
             break;
         case 3:
-            caption.innerHTML = "Seal: Give us fishes... Or your son is NEVER coming back.";
+            penguin.visible = false;
+            seal.visible = true;
+            telephone.visible = true; 
+            telephone.position.y += 0.1
+            telephone.position.z += 1
+            telephone.position.x += 0.8
+            telephone.rotation.set((90 / 180) * Math.PI, 0,0);
+            threeCamera.zoom = 1.25;
+            threeCamera.updateProjectionMatrix();
+            render();
+            caption.innerHTML = "Seal: Did you really think it was that easy!! MWAHAHAHAHAHA";
             break;
+        case 4:
+            penguin.visible = true;
+            seal.visible = false;
+            telephone.position.set(0, 0.45, 1);
+            telephone.rotation.set(0, 0, 0);
+            threeCamera.zoom = 1.25;
+            threeCamera.updateProjectionMatrix();
+            render();
+            caption.innerHTML = "Dont you dare hurt my child.I will look for you, I will find you, and I will kill you."
+            break
         default:
-            location.href = "../FishinScene.html"; // TODO: change to next page
+            location.href = "../SleddingScene/SleddingScene.html"; // TODO: change to next page
             break;
     }
 });

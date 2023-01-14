@@ -12,6 +12,7 @@ const canvasCtx = canvasElement.getContext("2d");
 // const resetButton = document.getElementById("reset");
 const instructions = document.getElementById("instructions");
 const closeButton = document.getElementById("close");
+const endSceneClose = document.getElementById("endSceneClose");
 const success = document.getElementById("success");
 const progress_bar = document.getElementById("progress_bar");
 const end_scene = document.getElementById("endScene");
@@ -20,6 +21,10 @@ var isLeft = false
 var isRight = true
 
 // resetButton.addEventListener("click", resetCamera);
+
+endSceneClose.addEventListener("click", () => {
+    location.href = "../";  //TODO
+});
 
 closeButton.addEventListener("click", () => {
     instructions.style.display = "none";
