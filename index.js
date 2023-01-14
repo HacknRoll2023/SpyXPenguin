@@ -55,8 +55,9 @@ function init() {
             penguin = gltf.scene;
             penguin.scale.set(0.1, 0.1, 0.1);
             penguin.position.set(0, 0, 0);
-            penguin.setRotationFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2);
+            penguin.setRotationFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
             scene.add(penguin);
+            spinModel(3);
 
             setTimeout(() => {
                 render();
@@ -89,7 +90,6 @@ function init() {
     renderer.outputEncoding = THREE.sRGBEncoding;
     container.appendChild(renderer.domElement);
     window.addEventListener("resize", onWindowResize);
- 
 
     sceneLoaded = true;
 }
@@ -105,6 +105,14 @@ function onWindowResize() {
 
 function render() {
     renderer.render(scene, threeCamera);
+}
+
+function spinModel(time) {
+    time *= 0.001; // convert time param to seconds
+    penguin.rotation.y = time;
+    // Render the scene to canvas
+    renderer.render(scene, threeCamera);
+    animationId = requestAnimationFrame(spinModel);
 }
 
 init();
