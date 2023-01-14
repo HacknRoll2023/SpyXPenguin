@@ -77,11 +77,13 @@
 
             .popup {
                 text-align: center;
-                background-color: black;
-                color: white;
+                background-color: rgba(255, 255, 255, 0.75);
+                color: black;
                 padding: 5% 15%;
+                border: 2px black solid;
                 border-radius: 20px;
-                display: flex;
+                display: none;
+                position: absolute;
             }
 
             .row {
@@ -126,6 +128,7 @@
             button:hover {
                 cursor: pointer;
                 text-decoration: underline;
+                border: black 2px solid;
             }
         </style>
     </body>
