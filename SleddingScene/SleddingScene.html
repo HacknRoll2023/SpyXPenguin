@@ -62,23 +62,58 @@
       <div class="container">
         <div class="digit-positions-left">
           <div class="digit-position">
-            <p class="digit-positions__label">Left Hand</p>
+            <p class="digit-positions__label">Right Hand</p>
             <div class="digit-position__value"></div>
           </div>
         </div>
 
         <div class="digit-positions-right">
           <div class="digit-position">
-            <p class="digit-positions__label">Right Hand</p>
+            <p class="digit-positions__label">Left Hand</p>
             <div class="digit-position__value"></div>
           </div>
         </div>
+      </div>
+
+      <!-- Game debug -->
+      <div class="game-debug">
+        
       </div>
 
       <video class="input_video"></video>
     </div>
 
     <script type="module">
+      // Game variables ------------------------------------------------------------
+      var gameState = "playing";
+
+      // Scene variables
+      var penguinPosition = {
+        x: 0,
+        z: 0,
+      };
+      var penguinRotation = 0;
+
+      var penguinSpeed = 0;
+      var movmentDirection = 0;
+
+      const maxAcceleration = 0.002;
+      const deceleartion = 0.0015;
+      const maxSpeed = 0.07;
+
+      // Controls variables
+      var leftHandPosition = {
+        x: 0,
+        y: 0,
+      };
+
+      var rightHandPosition = {
+        x: 0,
+        y: 0,
+      };
+
+      var bothHandsOnScreen = false;
+
       // Handtracking ------------------------------------------------------------
       const videoElement = document.getElementsByClassName("input_video")[0];
       const canvasElement = document.getElementsByClassName("output_canvas")[0];
@@ -129,12 +164,26 @@
 
         //   display the coordinates of the tips of the fingers for each hand
         if (results.multiHandLandmarks) {
+          bothHandsOnScreen = false;
+
           for (let i = 0; i < results.multiHandedness.length; i++) {
             const classification = results.multiHandedness[i];
-            const isRightHand = classification.label === "Right";
+            const isRightHand = !(classification.label === "Right"); // Mirrored
+
+            if (isRightHand) {
+              // Right index knuckle
+              rightHandPosition.x = results.multiHandLandmarks[i][5].x;
+              rightHandPosition.y = results.multiHandLandmarks[i][5].y;
+            } else {
+              // Left index knuckle
+              leftHandPosition.x = results.multiHandLandmarks[i][5].x;
+              leftHandPosition.y = results.multiHandLandmarks[i][5].y;
+            }
+            // display the coordinates of the tips of the fingers for each hand
             const digitPosition = isRightHand
               ? digitPositions[0]
               : digitPositions[1];
+
             digitPosition.innerText = `
                     Thumb: [${results.multiHandLandmarks[i][4].x.toFixed(
                       2
@@ -154,6 +203,12 @@
                 `;
           }
         }
+
+        if (results.multiHandedness.length === 2) {
+          bothHandsOnScreen = true;
+        }
+
+        updateGame();
       }
 
       // Model set up configuration
@@ -182,7 +237,7 @@
       // Three.js ------------------------------------------------------------
       import * as THREE from "three";
 
-        import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
       import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
@@ -190,6 +245,9 @@
 
       // Scene
       let threeCamera, scene, renderer;
+      var threeControls;
+
+      var sceneLoaded = false;
 
       // Models
       var fish, penguin, island, rod, bobber, alertModel, seal, babySeal;
@@ -204,7 +262,7 @@
           0.25,
           20
         );
-        threeCamera.position.set(-1, .5, 0);
+        threeCamera.position.set(-1, 0.5, 0);
         // rotate camera to face the penguin
         threeCamera.lookAt(2, 2, 2);
 
@@ -262,19 +320,26 @@
 
             // Scenery
 
-            var groundTexture = new THREE.TextureLoader().load( "./../textures/textureImages/snowTexture3.jpg" );
-			groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
-			groundTexture.repeat.set( 10000, 10000 );
-			groundTexture.anisotropy = 64;
-			groundTexture.encoding = THREE.sRGBEncoding;
+            var groundTexture = new THREE.TextureLoader().load(
+              "./../textures/textureImages/snowTexture3.jpg"
+            );
+            groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+            groundTexture.repeat.set(10000, 10000);
+            groundTexture.anisotropy = 64;
+            groundTexture.encoding = THREE.sRGBEncoding;
 
-			var groundMaterial = new THREE.MeshStandardMaterial( { map: groundTexture } );
+            var groundMaterial = new THREE.MeshStandardMaterial({
+              map: groundTexture,
+            });
 
-			var mesh = new THREE.Mesh( new THREE.PlaneBufferGeometry( 10000, 10000 ), groundMaterial );
-			mesh.position.y =0;
-			mesh.rotation.x = - Math.PI / 2;
-			mesh.receiveShadow = true;
-			scene.add( mesh );
+            var mesh = new THREE.Mesh(
+              new THREE.PlaneBufferGeometry(10000, 10000),
+              groundMaterial
+            );
+            mesh.position.y = 0;
+            mesh.rotation.x = -Math.PI / 2;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
           });
 
         // renderer
@@ -287,14 +352,16 @@
         container.appendChild(renderer.domElement);
 
         // Orbit controls
-        const controls = new OrbitControls(threeCamera, renderer.domElement);
-        controls.addEventListener("change", render); // use if there is no animation loop
-        controls.minDistance = 1;
-        controls.maxDistance = 5;
-        controls.target.set(0, 0.25, 0);
-        controls.update();
+        threeControls = new OrbitControls(threeCamera, renderer.domElement);
+        threeControls.addEventListener("change", render); // use if there is no animation loop
+        threeControls.minDistance = 1;
+        threeControls.maxDistance = 5;
+        threeControls.target.set(0, 0.25, 0);
+        threeControls.update();
 
         window.addEventListener("resize", onWindowResize);
+
+        sceneLoaded = true;
       }
 
       function onWindowResize() {
@@ -310,12 +377,121 @@
         renderer.render(scene, threeCamera);
       }
 
+      // Game logic ------------------------------------------------------------
+      function updateGame() {
+        if (!sceneLoaded) {
+          return;
+        }
+
+        // if both hands on screen
+        if (bothHandsOnScreen) {
+          // Hands range for knuckle 0.2 - 0.8 for y
+          // steering controls
+          // if left and right hand are roughly the same height
+          if (
+            leftHandPosition.y > 0.2 &&
+            leftHandPosition.y < 0.8 &&
+            rightHandPosition.y > 0.2 &&
+            rightHandPosition.y < 0.8
+          ) {
+            // if left hand is higher than right hand
+            if (leftHandPosition.y > rightHandPosition.y) {
+              // rotate penguin right by magnitude of difference
+              penguin.rotation.y +=
+                (leftHandPosition.y - rightHandPosition.y) * 0.1;
+
+              // accelrate penguin in direction of penguin facing by adding to penguinSpeed (update penguinSpeed, movmentDirection)
+              let penguinSpeedX = penguinSpeed * Math.sin(movmentDirection);
+              let penguinSpeedZ = penguinSpeed * Math.cos(movmentDirection);
+
+              let accelerationX =
+                maxAcceleration * Math.sin(penguin.rotation.y);
+              let accelerationZ =
+                maxAcceleration * Math.cos(penguin.rotation.y);
+
+              penguinSpeedX += accelerationX;
+              penguinSpeedZ += accelerationZ;
+
+              penguinSpeed = Math.sqrt(
+                penguinSpeedX * penguinSpeedX + penguinSpeedZ * penguinSpeedZ
+              );
+              movmentDirection = Math.atan2(penguinSpeedX, penguinSpeedZ);
+
+              // make sure penguin magnitude of velocity is less than maxSpeed
+              if (penguinSpeed > maxSpeed) {
+                penguinSpeed = maxSpeed;
+              }
+            }
+            // if right hand is higher than left hand rotate penguin left by magnitude of difference
+            else if (rightHandPosition.y > leftHandPosition.y) {
+              // rotate penguin left by magnitude of difference
+              penguin.rotation.y -=
+                (rightHandPosition.y - leftHandPosition.y) * 0.1;
+            }
+
+            // accelrate penguin by maxAcceleration in direction of penguin facing (update penguinSpeed, movmentDirection)
+            let penguinSpeedX = penguinSpeed * Math.sin(movmentDirection);
+            let penguinSpeedZ = penguinSpeed * Math.cos(movmentDirection);
+
+            let accelerationX = maxAcceleration * Math.sin(penguin.rotation.y + Math.PI/2);
+            let accelerationZ = maxAcceleration * Math.cos(penguin.rotation.y + Math.PI/2);
+
+            penguinSpeedX += accelerationX;
+            penguinSpeedZ += accelerationZ;
+
+            penguinSpeed = Math.sqrt(
+              penguinSpeedX * penguinSpeedX + penguinSpeedZ * penguinSpeedZ
+            );
+            movmentDirection = Math.atan2(penguinSpeedX, penguinSpeedZ);
+
+            // make sure penguin magnitude of velocity is less than maxSpeed
+            if (penguinSpeed > maxSpeed) {
+              penguinSpeed = maxSpeed;
+            }
+          }
+        } else {
+          // decelerate penguin by deceleartion in direction opposite of penguin facing (update penguinSpeed, movmentDirection)
+          let penguinSpeedX = penguinSpeed * Math.sin(movmentDirection);
+          let penguinSpeedZ = penguinSpeed * Math.cos(movmentDirection);
+
+          let accelerationX = deceleartion * Math.sin(movmentDirection);
+          let accelerationZ = deceleartion * Math.cos(movmentDirection);
+
+          penguinSpeedX -= accelerationX;
+          penguinSpeedZ -= accelerationZ;
+
+          // if penguinSpeed is less than 0.05 set penguinSpeed to 0
+          if (penguinSpeed < 0.01) {
+            penguinSpeed = 0;
+          }
+        }
+
+        // update penguin position by penguinSpeed in direction of penguin facing
+        penguin.position.x += penguinSpeed * Math.sin(movmentDirection);
+        penguin.position.z += penguinSpeed * Math.cos(movmentDirection);
+
+        // Update the camera to be on the behind side of the penguin
+        threeCamera.position.x =
+          penguin.position.x + 0.5 * Math.sin(penguin.rotation.y - Math.PI / 2);
+        threeCamera.position.y = penguin.position.y + 0.5;
+        threeCamera.position.z =
+          penguin.position.z + 0.5 * Math.cos(penguin.rotation.y - Math.PI / 2);
+
+        // Update the camera to look at the penguin
+        threeControls.target.set(penguin.position.x, 0.25, penguin.position.z);
+
+        // Update the camera
+        threeControls.update();
+
+        // Render the scene
+        render();
+      }
+
       // Initialize ------------------------------------------------------------
       initThree();
       render();
 
       handtrackCamera.start();
-
     </script>
   </body>
 </html>
