@@ -113,12 +113,12 @@ function init() {
     container.appendChild(renderer.domElement);
 
     // // controls
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.addEventListener("change", render); // use if there is no animation loop
-    controls.minDistance = 0.2;
-    controls.maxDistance = 10;
-    controls.target.set(0, 0.25, 0);
-    controls.update();
+    // const controls = new OrbitControls(camera, renderer.domElement);
+    // controls.addEventListener("change", render); // use if there is no animation loop
+    // controls.minDistance = 0.2;
+    // controls.maxDistance = 10;
+    // controls.target.set(0, 0.25, 0);
+    // controls.update();
 
     window.addEventListener("resize", onWindowResize);
 }
