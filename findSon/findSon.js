@@ -247,12 +247,14 @@ function onResults(results) {
                     if (frustum.containsPoint(penguin.position)) {
                         // Do something with the position...
                         console.log("found penguin");
+                        //foundPenguin = true;
                         
                         setTimeout(function() {
                             success.style.display = "block";
                             //your code to be executed after 1 second
                           }, 2500);
                     } else {
+                        //foundPenguin = false;
                         console.log("out of view")
                     }
                 }
