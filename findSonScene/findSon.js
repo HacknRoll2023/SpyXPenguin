@@ -22,7 +22,7 @@ closeButton.addEventListener("click", () => {
 });
 
 function resetCamera() {
-    console.log("reset");
+    //console.log("reset");
     camera.zoom = 1;
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
@@ -79,7 +79,6 @@ function init() {
 
         // Tree model
         loader.load("HangingTree.gltf", function (gltf) {
-            console.log(gltf);
             tree = gltf.scene;
             tree.scale.set(0.02, 0.02, 0.02);
             tree.position.set(0, 0, 0);
@@ -88,7 +87,6 @@ function init() {
 
         // Penguin model
         loader.load("hangingBaby.glb", function (gltf) {
-            console.log(gltf);
             penguin = gltf.scene;
             penguin.scale.set(0.006, 0.006, 0.006);
             penguin.position.set(0, 0.05, 0.03);
@@ -99,7 +97,6 @@ function init() {
 
         // add extra trees
         loader.load("HangingTree.gltf", function (gltf) {
-            console.log(gltf);
             tree = gltf.scene;
             tree.position.set(5, 0.02, 0.02);
             tree.scale.set(0.02, 0.02, 0.02);
@@ -107,7 +104,6 @@ function init() {
         });
 
         loader.load("HangingTree.gltf", function (gltf) {
-            console.log(gltf);
             tree = gltf.scene;
             tree.position.set(-3.2, -0.02, 0.02);
             tree.scale.set(0.02, 0.02, 0.02);
@@ -115,7 +111,6 @@ function init() {
         });
 
         loader.load("HangingTree.gltf", function (gltf) {
-            console.log(gltf);
             tree = gltf.scene;
             tree.position.set(2.2, 0.02, 0.02);
             tree.scale.set(0.02, 0.02, 0.02);
@@ -161,8 +156,6 @@ function onResults(results) {
     canvasCtx.fillText(">", canvasElement.clientWidth, canvasElement.clientHeight / 2);
     canvasCtx.fillText("^", canvasElement.clientWidth / 2, 30);
     canvasCtx.fillText("v", canvasElement.clientWidth / 2, 170);
-
-    console.log(canvasElement.clientLeft);
 
     if (results.multiHandLandmarks) {
         for (const landmarks of results.multiHandLandmarks) {
@@ -213,24 +206,24 @@ function onResults(results) {
 
                     // move up down left right
                     if (results.multiHandLandmarks[i][4].x <= 0.2) {
-                        console.log("move left");
+                        //console.log("move left");
                         camera.position.x += 0.1;
                         camera.updateProjectionMatrix();
                         render();
                     } else if (results.multiHandLandmarks[i][4].x >= 0.8) {
-                        console.log("move right");
+                        //console.log("move right");
                         camera.position.x -= 0.1;
                         camera.updateProjectionMatrix();
                         render();
                     }
 
                     if (results.multiHandLandmarks[i][4].y >= 0.8) {
-                        console.log("move down");
+                        //console.log("move down");
                         camera.position.y += 0.1;
                         camera.updateProjectionMatrix();
                         render();
                     } else if (results.multiHandLandmarks[i][4].y <= 0.2) {
-                        console.log("move up");
+                        //console.log("move up");
                         camera.position.y -= 0.1;
                         camera.updateProjectionMatrix();
                         render();
