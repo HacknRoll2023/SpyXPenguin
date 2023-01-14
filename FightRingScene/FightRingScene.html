@@ -137,13 +137,8 @@
       </div>
 
       <!-- Game debug -->
-      <div class="game-debug">
-        <div id="penguinSpeed"></div>
-        <div id="movmentDirection"></div>
-        <div id="movementStatus"></div>
-        <div id="penguinPosition"></div>
-        <div id="penguinLives"></div>
-      </div>
+      <div id="output-debug"></div>
+      <div id="penguinLives"></div>
 
       <video class="input_video"></video>
     </div>
@@ -200,71 +195,38 @@
       };
       var penguinRotation = 0;
 
+      var isShooting = false;
 
+      var numSnowballs = 0;
+      var maxSnowballs = 5;
+      var snowballPositions = [];
+      var snowballSpeed = 0.4;
+      var snowballRadius = 0.2;
 
+      var maxSeals = 20;
       var numSeals = 20;
-
       var sealPositions = [];
+      var sealSpeed = 0.1;
 
-      var fightRingRadius = 20;
+      var fightRingRadius = 20; // spawn area for seals
 
-      // Generate random iceObstacle locations within x:[0, 35] and z:[0, 35], but not within 5 units of the target
-      var distFromFrontOfTarget = 16;
-      var distFromBackOfTarget = 8;
-      var iceObstacleRange = {
-        x: [
-          targetPosition.x - distFromFrontOfTarget,
-          targetPosition.x + distFromBackOfTarget,
-        ],
-        z: [
-          targetPosition.z - distFromFrontOfTarget,
-          targetPosition.z + distFromBackOfTarget,
-        ],
-      };
+      var penguinHitRadius = 0.5;
+      var sealHitRadius = 0.5;
 
-      for (var i = 0; i < numSeals; i++) {
-        var iceObstacleLocation = {
-          x: Math.floor(
-            Math.random() * (iceObstacleRange.x[1] - iceObstacleRange.x[0]) +
-              iceObstacleRange.x[0]
-          ),
-          z: Math.floor(
-            Math.random() * (iceObstacleRange.z[1] - iceObstacleRange.z[0]) +
-              iceObstacleRange.z[0]
-          ),
-        };
-
-        while (
-          Math.abs(iceObstacleLocation.x - targetPosition.x) < 3.5 ||
-          Math.abs(iceObstacleLocation.z - targetPosition.z) < 3.5
-        ) {
-          iceObstacleLocation = {
-            x: Math.floor(
-              Math.random() * (iceObstacleRange.x[1] - iceObstacleRange.x[0]) +
-                iceObstacleRange.x[0]
-            ),
-            z: Math.floor(
-              Math.random() * (iceObstacleRange.z[1] - iceObstacleRange.z[0]) +
-                iceObstacleRange.z[0]
-            ),
-          };
-        }
-
-        sealLocations.push(iceObstacleLocation);
-      }
-
-      // Controls variables
-      var leftHandPosition = {
-        x: 0,
-        y: 0,
-      };
-
+      // Controls variables (based on Middle Finger Pip [number 10])
       var rightHandPosition = {
-        x: 0,
-        y: 0,
+        mcp: {
+          x: 0,
+          y: 0,
+        },
+        pip: {
+          x: 0,
+          y: 0,
+        },
       };
 
-      var bothHandsOnScreen = false;
+      var rightHandOpen = false;
+      var firstRightHandOpen = false;
 
       // Handtracking ------------------------------------------------------------
       const videoElement = document.getElementsByClassName("input_video")[0];
@@ -316,20 +278,27 @@
 
         //   display the coordinates of the tips of the fingers for each hand
         if (results.multiHandLandmarks) {
-          bothHandsOnScreen = false;
-
           for (let i = 0; i < results.multiHandedness.length; i++) {
             const classification = results.multiHandedness[i];
             const isRightHand = !(classification.label === "Right"); // Mirrored
 
             if (isRightHand) {
-              // Right index knuckle
-              rightHandPosition.x = results.multiHandLandmarks[i][5].x;
-              rightHandPosition.y = results.multiHandLandmarks[i][5].y;
-            } else {
-              // Left index knuckle
-              leftHandPosition.x = results.multiHandLandmarks[i][5].x;
-              leftHandPosition.y = results.multiHandLandmarks[i][5].y;
+              // Get right hand position
+
+              // Right middle mcp (main tracking)
+              rightHandPosition.mcp.x = results.multiHandLandmarks[i][9].x;
+              rightHandPosition.mcp.y = results.multiHandLandmarks[i][9].y;
+
+              // Right middle dip
+              rightHandPosition.pip.x = results.multiHandLandmarks[i][11].x;
+              rightHandPosition.pip.y = results.multiHandLandmarks[i][11].y;
+
+              // Check if the right hand is open (middle finger pip is higher than mcp)
+              if (rightHandPosition.pip.y < rightHandPosition.mcp.y) {
+                rightHandOpen = true;
+              } else {
+                rightHandOpen = false;
+              }
             }
             // display the coordinates of the tips of the fingers for each hand
             const digitPosition = isRightHand
@@ -354,10 +323,6 @@
                     )}, ${results.multiHandLandmarks[i][20].y.toFixed(2)}]
                 `;
           }
-        }
-
-        if (results.multiHandedness.length === 2) {
-          bothHandsOnScreen = true;
         }
 
         updateGame();
@@ -389,7 +354,7 @@
       // Three.js ------------------------------------------------------------
       import * as THREE from "three";
 
-      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      // import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
       import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
@@ -403,6 +368,8 @@
 
       // Models
       var penguin, alertModel, directionIndicator, fortress;
+      var snowballs = [];
+      var seals = [];
 
       function initThree() {
         const container = document.createElement("div");
@@ -414,7 +381,7 @@
           0.25,
           20
         );
-        threeCamera.position.set(-1, 0.5, 0);
+        threeCamera.position.set(0, 0.2, 0);
         // rotate camera to face the penguin
         threeCamera.lookAt(2, 2, 2);
 
@@ -460,70 +427,54 @@
             loader.setDRACOLoader(dracoLoader);
 
             // Penguin model
-            const glbPath = "PenguinSleigh.gltf";
+            const glbPath = "Penguin.gltf";
             loader.load(glbPath, function (gltf) {
               console.log(gltf);
               penguin = gltf.scene;
               penguin.scale.set(0.06, 0.06, 0.06);
-              penguin.position.set(0.08, 0.02, 0.03);
+              penguin.position.set(0, 0.01, 0);
               penguin.rotation.set(0, (-10 / 180) * Math.PI, 0);
               scene.add(penguin);
             });
 
-            // Direction indicator model
-            const glbPath2 = "DirectionTilted.gltf";
-            loader.load(glbPath2, function (gltf) {
-              console.log(gltf);
-              directionIndicator = gltf.scene;
-              directionIndicator.scale.set(0.06, 0.06, 0.06);
-              directionIndicator.position.set(0, 0.3, 0);
-              directionIndicator.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
-              scene.add(directionIndicator);
-            });
-
             // Add fortress model for target destination
-            const glbPath4 = "IceFortressInhabited.gltf";
+            const glbPath4 = "ArenaIced.gltf";
             loader.load(glbPath4, function (gltf) {
               console.log(gltf);
               fortress = gltf.scene;
               fortress.scale.set(0.2, 0.2, 0.2);
-              fortress.position.set(targetPosition.x, 0.4, targetPosition.z);
+              fortress.position.set(0, -0.82, 0);
               fortress.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
               scene.add(fortress);
             });
 
-            // Alert model for target destination
-            const glbPath3 = "Alert.gltf";
+            // Snowball model for target destination
+            const glbPath3 = "Snowball.gltf";
             loader.load(glbPath3, function (gltf) {
-              console.log(gltf);
-              alertModel = gltf.scene;
-              alertModel.scale.set(0.6, 0.6, 0.6);
-              alertModel.position.set(targetPosition.x, 0.5, targetPosition.z);
-              alertModel.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
-              scene.add(alertModel);
+              var snowballProjectile = gltf.scene;
+              snowballProjectile.scale.set(0.1, 0.1, 0.1);
+
+              // Add all snowballs to the scene
+              for (var i = 0; i < maxSnowballs; i++) {
+                let snowballProjectile2 = gltf.scene.clone();
+                snowballProjectile2.position.set(0, -0.2, 0);
+                scene.add(snowballProjectile2);
+                snowballs.push(snowballProjectile2);
+              }
             });
 
-            // Trees
-            const glbPath5 = "IceObstacle.gltf";
+            // Seals
+            const glbPath5 = "SealAngry.gltf";
             loader.load(glbPath5, function (gltf) {
-              console.log(gltf);
-              var iceObstacle = gltf.scene;
-              iceObstacle.scale.set(0.1, 0.1, 0.1);
+              var sealEnemy = gltf.scene;
+              sealEnemy.scale.set(0.1, 0.1, 0.1);
 
-              // Add all iceObstacles to the scene
+              // Add all sealEnemy to the scene
               for (var i = 0; i < numSeals; i++) {
-                let iceObstacle2 = gltf.scene.clone();
-                iceObstacle2.position.set(
-                  sealLocations[i].x,
-                  0,
-                  sealLocations[i].z
-                );
-
-                // random rotation
-                var randomRotation = Math.random() * Math.PI * 2;
-                iceObstacle2.rotation.set(0, randomRotation, 0);
-
-                scene.add(iceObstacle2);
+                let sealEnemy = gltf.scene.clone();
+                sealEnemy.position.set(0, -0.4, 0);
+                scene.add(sealEnemy);
+                seals.push(sealEnemy);
               }
             });
 
@@ -558,13 +509,13 @@
         renderer.outputEncoding = THREE.sRGBEncoding;
         container.appendChild(renderer.domElement);
 
-        // Orbit controls
-        threeControls = new OrbitControls(threeCamera, renderer.domElement);
-        threeControls.addEventListener("change", render); // use if there is no animation loop
-        threeControls.minDistance = 1;
-        threeControls.maxDistance = 5;
-        threeControls.target.set(0, 0.25, 0);
-        threeControls.update();
+        // // Orbit controls
+        // threeControls = new OrbitControls(threeCamera, renderer.domElement);
+        // threeControls.addEventListener("change", render); // use if there is no animation loop
+        // threeControls.minDistance = 1;
+        // threeControls.maxDistance = 5;
+        // threeControls.target.set(0, 0.25, 0);
+        // threeControls.update();
 
         window.addEventListener("resize", onWindowResize);
 
@@ -585,238 +536,55 @@
       }
 
       // Game logic ------------------------------------------------------------
-      var iceObstacleRadius = 0.1;
-      var penguinRadius = 0.1;
-      var targetRadius = 3;
-
       function updateGame() {
         if (!sceneLoaded) {
           return;
         }
 
-        // if both hands on screen
-        if (bothHandsOnScreen) {
-          // Hands range for knuckle 0.2 - 0.8 for y
-          // steering controls
-          // if left and right hand are roughly the same height
-          if (
-            leftHandPosition.y > 0.1 &&
-            leftHandPosition.y < 0.9 &&
-            rightHandPosition.y > 0.1 &&
-            rightHandPosition.y < 0.9
-          ) {
-            // if left hand is higher than right hand
-            if (leftHandPosition.y > rightHandPosition.y) {
-              // rotate penguin right by magnitude of difference
-              penguin.rotation.y +=
-                (leftHandPosition.y - rightHandPosition.y) * 0.1;
-
-              // accelrate penguin in direction of penguin facing by adding to penguinSpeed (update penguinSpeed, movmentDirection)
-              let penguinSpeedX = penguinSpeed * Math.sin(movmentDirection);
-              let penguinSpeedZ = penguinSpeed * Math.cos(movmentDirection);
-
-              let accelerationX =
-                maxAcceleration * Math.sin(penguin.rotation.y + Math.PI / 2);
-              let accelerationZ =
-                maxAcceleration * Math.cos(penguin.rotation.y + Math.PI / 2);
-
-              penguinSpeedX += accelerationX;
-              penguinSpeedZ += accelerationZ;
-
-              penguinSpeed = Math.sqrt(
-                penguinSpeedX * penguinSpeedX + penguinSpeedZ * penguinSpeedZ
-              );
-              movmentDirection = Math.atan2(penguinSpeedX, penguinSpeedZ);
-
-              // make sure penguin magnitude of velocity is less than maxSpeed
-              if (penguinSpeed > maxSpeed) {
-                penguinSpeed = maxSpeed;
-              }
-            }
-            // if right hand is higher than left hand rotate penguin left by magnitude of difference
-            else if (rightHandPosition.y > leftHandPosition.y) {
-              // rotate penguin left by magnitude of difference
-              penguin.rotation.y -=
-                (rightHandPosition.y - leftHandPosition.y) * 0.1;
-            }
-
-            // accelrate penguin by maxAcceleration in direction of penguin facing (update penguinSpeed, movmentDirection)
-            let penguinSpeedX = penguinSpeed * Math.sin(movmentDirection);
-            let penguinSpeedZ = penguinSpeed * Math.cos(movmentDirection);
-
-            let accelerationX =
-              maxAcceleration * Math.sin(penguin.rotation.y + Math.PI / 2);
-            let accelerationZ =
-              maxAcceleration * Math.cos(penguin.rotation.y + Math.PI / 2);
-
-            penguinSpeedX += accelerationX;
-            penguinSpeedZ += accelerationZ;
-
-            penguinSpeed = Math.sqrt(
-              penguinSpeedX * penguinSpeedX + penguinSpeedZ * penguinSpeedZ
-            );
-            movmentDirection = Math.atan2(penguinSpeedX, penguinSpeedZ);
-
-            movementStatus = "accelerating";
-
-            // make sure penguin magnitude of velocity is less than maxSpeed
-            if (penguinSpeed > maxSpeed) {
-              penguinSpeed = maxSpeed;
-            }
-          } else {
-            // if penguinSpeed is less than 0.05 set penguinSpeed to 0
-            if (penguinSpeed < 0.01) {
-              penguinSpeed = 0;
-
-              movementStatus = "stopped";
-            } else {
-              // decelerate penguin by deceleartion in direction opposite of penguin facing (update penguinSpeed, movmentDirection)
-              let penguinSpeedX = penguinSpeed * Math.sin(movmentDirection);
-              let penguinSpeedZ = penguinSpeed * Math.cos(movmentDirection);
-
-              let accelerationX = deceleartion * Math.sin(movmentDirection);
-              let accelerationZ = deceleartion * Math.cos(movmentDirection);
-
-              penguinSpeedX -= accelerationX;
-              penguinSpeedZ -= accelerationZ;
-
-              penguinSpeed = Math.sqrt(
-                penguinSpeedX * penguinSpeedX + penguinSpeedZ * penguinSpeedZ
-              );
-
-              if (penguinSpeedX < 0) {
-                penguinSpeedX = 0;
-              }
-              if (penguinSpeedZ < 0) {
-                penguinSpeedZ = 0;
-              }
-
-              movementStatus = "decelerating";
-            }
+        if (rightHandOpen) {
+          if (!firstRightHandOpen) {
+            firstRightHandOpen = true;
+            isShooting = true;
           }
         } else {
-          // if penguinSpeed is less than 0.05 set penguinSpeed to 0
-          if (penguinSpeed < 0.01) {
-            penguinSpeed = 0;
-
-            movementStatus = "stopped";
-          } else {
-            // decelerate penguin by deceleartion in direction opposite of penguin facing (update penguinSpeed, movmentDirection)
-            let penguinSpeedX = penguinSpeed * Math.sin(movmentDirection);
-            let penguinSpeedZ = penguinSpeed * Math.cos(movmentDirection);
-
-            let accelerationX = deceleartion * Math.sin(movmentDirection);
-            let accelerationZ = deceleartion * Math.cos(movmentDirection);
-
-            penguinSpeedX -= accelerationX;
-            penguinSpeedZ -= accelerationZ;
-
-            penguinSpeed = Math.sqrt(
-              penguinSpeedX * penguinSpeedX + penguinSpeedZ * penguinSpeedZ
-            );
-
-            if (penguinSpeedX < 0) {
-              penguinSpeedX = 0;
-            }
-            if (penguinSpeedZ < 0) {
-              penguinSpeedZ = 0;
-            }
-
-            movementStatus = "decelerating";
-          }
+          firstRightHandOpen = false;
+          isShooting = false;
         }
 
-        // update penguin position by penguinSpeed in direction of penguin facing
-        penguin.position.x += penguinSpeed * Math.sin(movmentDirection);
-        penguin.position.z += penguinSpeed * Math.cos(movmentDirection);
+        // Update the camera rotation
 
-        // Check game state -------------------------------------------------------
-        // Check if the penguin has reached the target
-        if (
-          Math.abs(penguin.position.x - targetPosition.x) < 4 &&
-          Math.abs(penguin.position.z - targetPosition.z) < 4
-        ) {
+        // Update snowball positions
 
-          console.log("z" + penguin.position.z);
-          console.log("x" + penguin.position.x);
+        // Update seal positions
 
-          gameState = "won";
+        // Check for collisions between penguin and seals
 
-          // Overlay that brings them to the next page on click
-          document.getElementById("overlay-win").style.display = "block";
-        } else {
-          // Check for collisions with the iceObstacleLocations
-          for (let i = 0; i < sealLocations.length; i++) {
-            if (
-              Math.abs(penguin.position.x - sealLocations[i].x) < 0.9 &&
-              Math.abs(penguin.position.z - sealLocations[i].z) < 0.9
-            ) {
-              // reduce lives by 1
-              penguinLives -= 1;
-
-              if (penguinLives == 0) {
-                // Overlay that brings them to the next page on click
-                document.getElementById("overlay-lose").style.display = "block";
-
-                gameState = "lost";
-              } else {
-                // Reset the penguin position to start
-                penguin.position.x = 0;
-                penguin.position.z = 0;
-
-                // Reset the penguin rotation
-                penguin.rotation.y = 0;
-
-                // Reset the movmentDirection and penguinSpeed
-                penguinSpeed = 0;
-                movmentDirection = 0;
-
-                // Reset the movementStatus
-                movementStatus = "stopped";
-
-
-              }
-            }
-          }
-        }
-
-        // Update the camera to be on the behind side of the penguin
-        threeCamera.position.x =
-          penguin.position.x + 0.5 * Math.sin(penguin.rotation.y - Math.PI / 2);
-        threeCamera.position.y = penguin.position.y + 0.35;
-        threeCamera.position.z =
-          penguin.position.z + 0.5 * Math.cos(penguin.rotation.y - Math.PI / 2);
-
-        // Update the position of the directionIndicator
-        directionIndicator.position.x = penguin.position.x;
-        directionIndicator.position.z = penguin.position.z;
-
-        // Update the rotation of the directionIndicator to point to the target relative to the penguin
-        directionIndicator.rotation.y = Math.atan2(
-          penguin.position.x - targetPosition.x,
-          penguin.position.z - targetPosition.z
-        );
+        // Check for collisions between snowballs and seals
 
         // CAMERA CONTROLS -------------------------------------------------------
-        // Update the camera to look at the penguin
-        threeControls.target.set(penguin.position.x, 0.25, penguin.position.z);
-
-        // Update the camera
-        threeControls.update();
+        // Update the camera to look at
 
         // Render the scene
         render();
 
-        // // Display penguinSpeed and movmentDirection --------------------------------
-        // document.getElementById("penguinSpeed").innerHTML = penguinSpeed;
-        // document.getElementById("movmentDirection").innerHTML =
-        //   movmentDirection;
-        // document.getElementById("movementStatus").innerHTML = movementStatus;
-        // document.getElementById("penguinPosition").innerHTML =
-        //   "x: " + penguin.position.x + " z: " + penguin.position.z;
+        // // Display rotation and shooting --------------------------------
+        var outputHTML = "";
+        // gesture variables
+        outputHTML += "rightHandOpen: " + rightHandOpen + "<br>";
+        outputHTML += "firstRightHandOpen: " + firstRightHandOpen + "<br>";
+
+        // hand position variables
+        outputHTML += "rightHandPosition: " + rightHandPosition + "<br>";
+        outputHTML += "rightHandOpen: " + rightHandOpen + "<br>";
+
+        // game variables
+        outputHTML += "rotation: " + penguinRotation + "<br>";
+        outputHTML += "shooting: " + isShooting + "<br>";
+
+        // Display the output
+        document.getElementById("output-debug").innerHTML = outputHTML;
 
         // Display penguinLives ---------------------------------------------------
-
         document.getElementById("penguinLives").innerHTML =
           "lives: " + penguinLives;
       }
