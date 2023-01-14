@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "../build/three.module.js",
+                    "three/addons/": "../jsm/"
+                }
+            }
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    </head>
+
+    <body>
+        <div class="container">
+            <canvas class="output_canvas" width="329px" height="185px"></canvas>
+            <div class="digit-positions-left">
+                <div class="digit-position">
+                    <p class="digit-positions__label">Left Hand</p>
+                    <div class="digit-position__value"></div>
+                </div>
+            </div>
+
+            <div class="digit-positions-right">
+                <div class="digit-position">
+                    <p class="digit-positions__label">Right Hand</p>
+                    <div class="digit-position__value"></div>
+                </div>
+            </div>
+            <button id="reset">Reset Camera</button>
+            <video class="input_video"></video>
+        </div>
+        <script type="module" src="./findSon.js"></script>
+        <style>
+            .container {
+                position: absolute;
+                z-index: 10;
+                float: left;
+            }
+        </style>
+    </body>
+</html>
