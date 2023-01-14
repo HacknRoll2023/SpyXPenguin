@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Sledding to the Lair</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+    />
+
+    <!-- <link rel="icon" href="../images/icon.png"> -->
+
+    <!-- Handtracking scripts -->
+    <meta charset="utf-8" />
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <style>
+      .handtrack-container {
+        position: absolute;
+        z-index: 10;
+        float: left;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Import maps polyfill -->
+    <!-- Remove this when import maps will be widely supported -->
+    <script
+      async
+      src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"
+    ></script>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "../build/three.module.js",
+          "three/addons/": "../jsm/"
+        }
+      }
+    </script>
+
+    <!-- Handtracking -->
+    <div class="handtrack-container">
+      <canvas class="output_canvas" width="640px" height="370px"></canvas>
+
+      <div class="container">
+        <div class="digit-positions-left">
+          <div class="digit-position">
+            <p class="digit-positions__label">Left Hand</p>
+            <div class="digit-position__value"></div>
+          </div>
+        </div>
+
+        <div class="digit-positions-right">
+          <div class="digit-position">
+            <p class="digit-positions__label">Right Hand</p>
+            <div class="digit-position__value"></div>
+          </div>
+        </div>
+      </div>
+
+      <video class="input_video"></video>
+    </div>
+
+    <script type="module">
+      // Handtracking ------------------------------------------------------------
+      const videoElement = document.getElementsByClassName("input_video")[0];
+      const canvasElement = document.getElementsByClassName("output_canvas")[0];
+      const canvasCtx = canvasElement.getContext("2d");
+
+      const digitPositions = document.getElementsByClassName(
+        "digit-position__value"
+      );
+
+      // hide the video element, and just show the canvas
+      videoElement.style.display = "none";
+
+      // Function to handle handtracking
+      function onResults(results) {
+        // Mirror the video feed and draw the results on the canvas
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.translate(canvasElement.width, 0);
+        canvasCtx.scale(-1, 1);
+        canvasCtx.drawImage(
+          results.image,
+          0,
+          0,
+          canvasElement.width,
+          canvasElement.height
+        );
+        if (results.multiHandLandmarks) {
+          for (const landmarks of results.multiHandLandmarks) {
+            drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+              color: "#00FF00",
+              lineWidth: 5,
+            });
+            drawLandmarks(canvasCtx, landmarks, {
+              color: "#FF0000",
+              lineWidth: 2,
+            });
+          }
+        }
+
+        canvasCtx.restore();
+
+        // wrist - 0
+        // thumb tip - 4
+        // index tip - 8
+        // middle tip - 12
+        // ring tip - 16
+        // pinky tip - 20
+
+        //   display the coordinates of the tips of the fingers for each hand
+        if (results.multiHandLandmarks) {
+          for (let i = 0; i < results.multiHandedness.length; i++) {
+            const classification = results.multiHandedness[i];
+            const isRightHand = classification.label === "Right";
+            const digitPosition = isRightHand
+              ? digitPositions[0]
+              : digitPositions[1];
+            digitPosition.innerText = `
+                    Thumb: [${results.multiHandLandmarks[i][4].x.toFixed(
+                      2
+                    )}, ${results.multiHandLandmarks[i][4].y.toFixed(2)}]
+                    Index: [${results.multiHandLandmarks[i][8].x.toFixed(
+                      2
+                    )}, ${results.multiHandLandmarks[i][8].y.toFixed(2)}]
+                    Middle: [${results.multiHandLandmarks[i][12].x.toFixed(
+                      2
+                    )}, ${results.multiHandLandmarks[i][12].y.toFixed(2)}]
+                    Ring: [${results.multiHandLandmarks[i][16].x.toFixed(
+                      2
+                    )}, ${results.multiHandLandmarks[i][16].y.toFixed(2)}]
+                    Pinky: [${results.multiHandLandmarks[i][20].x.toFixed(
+                      2
+                    )}, ${results.multiHandLandmarks[i][20].y.toFixed(2)}]
+                `;
+          }
+        }
+      }
+
+      // Model set up configuration
+      const hands = new Hands({
+        locateFile: (file) => {
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        },
+      });
+
+      hands.setOptions({
+        maxNumHands: 2,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+      hands.onResults(onResults);
+
+      const handtrackCamera = new Camera(videoElement, {
+        onFrame: async () => {
+          await hands.send({ image: videoElement });
+        },
+        width: 1280,
+        height: 720,
+      });
+
+      // Three.js ------------------------------------------------------------
+      import * as THREE from "three";
+
+        import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+      import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+
+      // Scene
+      let threeCamera, scene, renderer;
+
+      // Models
+      var fish, penguin, island, rod, bobber, alertModel, seal, babySeal;
+
+      function initThree() {
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+
+        threeCamera = new THREE.PerspectiveCamera(
+          45,
+          window.innerWidth / window.innerHeight,
+          0.25,
+          20
+        );
+        threeCamera.position.set(1, 0.3, 0);
+        // rotate camera to face the penguin
+        threeCamera.lookAt(2, 2, 2);
+
+        scene = new THREE.Scene();
+        const clock = new THREE.Clock();
+
+        // Load the background
+        new RGBELoader()
+          .setPath("./../textures/equirectangular/")
+          .load("kloppenheim_06_puresky_2k.hdr", function (texture) {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+
+            scene.background = texture;
+            scene.environment = texture;
+
+            // // load in red, green and blue cubes for orientation -----------------------------
+            const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // green
+            const cube1 = new THREE.Mesh(geometry, material);
+            cube1.position.set(0, 0.2, 0);
+            scene.add(cube1);
+
+            const geometry2 = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+            const material2 = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // red
+            const cube2 = new THREE.Mesh(geometry2, material2);
+            cube2.position.set(0.2, 0, 0);
+            scene.add(cube2);
+
+            const geometry3 = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+            const material3 = new THREE.MeshBasicMaterial({ color: 0x0000ff }); // blue
+            const cube3 = new THREE.Mesh(geometry3, material3);
+            cube3.position.set(0, 0, 0.2);
+            scene.add(cube3);
+
+            render();
+
+            // load in models ---------------------------------------------------------------
+            // model set up
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath("../jsm/libs/draco/");
+
+            const loader = new GLTFLoader().setPath("../models/");
+            loader.setDRACOLoader(dracoLoader);
+
+            // FishingIsland model
+            const glbPathIsland = "FishingIsland.gltf";
+            loader.load(glbPathIsland, function (gltf) {
+              island = gltf.scene;
+              island.scale.set(0.1, 0.1, 0.1);
+              island.position.set(1, -0.1, 0.3);
+              island.rotation.set(0, 90, 0);
+              scene.add(island);
+            });
+
+            // Penguin model
+            const glbPath = "Penguin.gltf";
+            loader.load(glbPath, function (gltf) {
+              console.log(gltf);
+              penguin = gltf.scene;
+              penguin.scale.set(0.06, 0.06, 0.06);
+              penguin.position.set(0.08, 0.02, 0.03);
+              penguin.rotation.set(0, (-10 / 180) * Math.PI, 0);
+              scene.add(penguin);
+            });
+          });
+
+        // renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild(renderer.domElement);
+
+        // Orbit controls
+        const controls = new OrbitControls(threeCamera, renderer.domElement);
+        controls.addEventListener("change", render); // use if there is no animation loop
+        controls.minDistance = 0.2;
+        controls.maxDistance = 10;
+        controls.target.set(0, 0.25, 0);
+        controls.update();
+
+        window.addEventListener("resize", onWindowResize);
+      }
+
+      function onWindowResize() {
+        threeCamera.aspect = window.innerWidth / window.innerHeight;
+        threeCamera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        render();
+      }
+
+      function render() {
+        renderer.render(scene, threeCamera);
+      }
+
+      // Initialize ------------------------------------------------------------
+      initThree();
+      render();
+
+      handtrackCamera.start();
+
+    </script>
+  </body>
+</html>
