@@ -18,10 +18,12 @@ var penguin, fortress;
 const captionContainer = document.getElementById("captionContainer");
 const nextButton = document.getElementById("next");
 const caption = document.getElementById("caption");
+const audio = document.getElementById("bgm");
 
 function initThree() {
     const container = document.createElement("div");
     document.body.appendChild(container);
+    audio.play();
 
     threeCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 20);
     threeCamera.position.set(2, 1, 3);
