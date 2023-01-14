@@ -134,6 +134,8 @@
             <div class="digit-position__value"></div>
           </div>
         </div>
+
+        <br />
       </div>
 
       <!-- Game debug -->
@@ -213,9 +215,34 @@
       var penguinHitRadius = 0.5;
       var sealHitRadius = 0.5;
 
-      // Controls variables (based on Middle Finger Pip [number 10])
+      // for shooting
+      var crossHair = {
+        x: 0,
+        y: 0,
+      };
+
+      var crossHairY = 0.2;
+
+      var crossHairAngleOffset = {
+        x: 0,
+      };
+
+      // For camera
+      var cameraLookAtPoint = {
+        x: 0,
+        z: 0,
+      };
+
+      var lookAtPointDistance = 10;
+
+      var viewOriginHeight = 0.2;
+
+      // Right hand variables -------------------------------------------------------
+      var rightHandDetected = false;
+
+      // Controls variables (based on Middle Finger pip [number 10])
       var rightHandPosition = {
-        mcp: {
+        dip: {
           x: 0,
           y: 0,
         },
@@ -278,23 +305,26 @@
 
         //   display the coordinates of the tips of the fingers for each hand
         if (results.multiHandLandmarks) {
+          rightHandDetected = false;
+
           for (let i = 0; i < results.multiHandedness.length; i++) {
             const classification = results.multiHandedness[i];
             const isRightHand = !(classification.label === "Right"); // Mirrored
 
             if (isRightHand) {
+              rightHandDetected = true;
               // Get right hand position
 
-              // Right middle mcp (main tracking)
-              rightHandPosition.mcp.x = results.multiHandLandmarks[i][9].x;
-              rightHandPosition.mcp.y = results.multiHandLandmarks[i][9].y;
+              // Right middle pip (main tracking)
+              rightHandPosition.pip.x = results.multiHandLandmarks[i][10].x;
+              rightHandPosition.pip.y = results.multiHandLandmarks[i][10].y;
 
               // Right middle dip
-              rightHandPosition.pip.x = results.multiHandLandmarks[i][11].x;
-              rightHandPosition.pip.y = results.multiHandLandmarks[i][11].y;
+              rightHandPosition.dip.x = results.multiHandLandmarks[i][11].x;
+              rightHandPosition.dip.y = results.multiHandLandmarks[i][11].y;
 
-              // Check if the right hand is open (middle finger pip is higher than mcp)
-              if (rightHandPosition.pip.y < rightHandPosition.mcp.y) {
+              // Check if the right hand is open (middle finger pip is higher than dip)
+              if (rightHandPosition.dip.y < rightHandPosition.pip.y) {
                 rightHandOpen = true;
               } else {
                 rightHandOpen = false;
@@ -306,22 +336,24 @@
               : digitPositions[1];
 
             digitPosition.innerText = `
-                    Thumb: [${results.multiHandLandmarks[i][4].x.toFixed(
-                      2
-                    )}, ${results.multiHandLandmarks[i][4].y.toFixed(2)}]
-                    Index: [${results.multiHandLandmarks[i][8].x.toFixed(
-                      2
-                    )}, ${results.multiHandLandmarks[i][8].y.toFixed(2)}]
-                    Middle: [${results.multiHandLandmarks[i][12].x.toFixed(
-                      2
-                    )}, ${results.multiHandLandmarks[i][12].y.toFixed(2)}]
-                    Ring: [${results.multiHandLandmarks[i][16].x.toFixed(
-                      2
-                    )}, ${results.multiHandLandmarks[i][16].y.toFixed(2)}]
-                    Pinky: [${results.multiHandLandmarks[i][20].x.toFixed(
-                      2
-                    )}, ${results.multiHandLandmarks[i][20].y.toFixed(2)}]
-                `;
+                          Thumb: [${results.multiHandLandmarks[i][4].x.toFixed(
+                            2
+                          )}, ${results.multiHandLandmarks[i][4].y.toFixed(2)}]
+                          Index: [${results.multiHandLandmarks[i][8].x.toFixed(
+                            2
+                          )}, ${results.multiHandLandmarks[i][8].y.toFixed(2)}]
+                          Middle: [${results.multiHandLandmarks[
+                            i
+                          ][12].x.toFixed(2)}, ${results.multiHandLandmarks[
+              i
+            ][12].y.toFixed(2)}]
+                          Ring: [${results.multiHandLandmarks[i][16].x.toFixed(
+                            2
+                          )}, ${results.multiHandLandmarks[i][16].y.toFixed(2)}]
+                          Pinky: [${results.multiHandLandmarks[i][20].x.toFixed(
+                            2
+                          )}, ${results.multiHandLandmarks[i][20].y.toFixed(2)}]
+                      `;
           }
         }
 
@@ -354,7 +386,7 @@
       // Three.js ------------------------------------------------------------
       import * as THREE from "three";
 
-      // import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
       import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
@@ -367,7 +399,7 @@
       var sceneLoaded = false;
 
       // Models
-      var penguin, alertModel, directionIndicator, fortress;
+      var penguin, crosshair, fortress;
       var snowballs = [];
       var seals = [];
 
@@ -381,9 +413,13 @@
           0.25,
           20
         );
-        threeCamera.position.set(0, 0.2, 0);
-        // rotate camera to face the penguin
-        threeCamera.lookAt(2, 2, 2);
+        threeCamera.position.set(0, viewOriginHeight, 0);
+        // rotate camera to face straight ahead
+        threeCamera.lookAt(
+          cameraLookAtPoint.x,
+          viewOriginHeight,
+          cameraLookAtPoint.z
+        );
 
         scene = new THREE.Scene();
         const clock = new THREE.Clock();
@@ -438,14 +474,25 @@
             });
 
             // Add fortress model for target destination
-            const glbPath4 = "ArenaIced.gltf";
+            const glbPath4 = "ArenaCentered.gltf";
             loader.load(glbPath4, function (gltf) {
               console.log(gltf);
               fortress = gltf.scene;
               fortress.scale.set(0.2, 0.2, 0.2);
-              fortress.position.set(0, -0.82, 0);
+              fortress.position.set(0, 0, 0);
               fortress.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
               scene.add(fortress);
+            });
+
+            // Crosshair model
+            const glbPath2 = "Crosshair.gltf";
+            loader.load(glbPath2, function (gltf) {
+              console.log(gltf);
+              crosshair = gltf.scene;
+              crosshair.scale.set(0.05, 0.05,0.05);
+              crosshair.position.set(lookAtPointDistance/2, 0.2, 2);
+              crosshair.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
+              scene.add(crosshair);
             });
 
             // Snowball model for target destination
@@ -541,28 +588,86 @@
           return;
         }
 
-        if (rightHandOpen) {
-          if (!firstRightHandOpen) {
-            firstRightHandOpen = true;
-            isShooting = true;
+        if (rightHandDetected) {
+          if (rightHandOpen) {
+            if (!firstRightHandOpen) {
+              firstRightHandOpen = true;
+              isShooting = true;
+            }
+          } else {
+            firstRightHandOpen = false;
+            isShooting = false;
           }
-        } else {
-          firstRightHandOpen = false;
-          isShooting = false;
+
+          // Thresholds
+          // [> 0.8] for turning left, [< 0.2] for turning right
+
+          crossHairAngleOffset.x
+
+          // Update the penguin's rotation
+          if (rightHandPosition.pip.x > 0.8) {
+            // Turn left
+            penguinRotation += 0.1;
+          } else if (rightHandPosition.pip.x < 0.2) {
+            // Turn right
+            penguinRotation -= 0.1;
+          } else {
+            // Aim crosshair
+            // [0.75 - 0.25] for aiming crosshair x rotation, mappping to [-0.25, 0.25] radians off center
+            crossHairAngleOffset.x = (rightHandPosition.pip.x - 0.5) * 2 * 0.5;
+
+            // [0.95 - 0.05] for aiming crosshair y position, mapping to [0.1, 0.2] y axis
+            crossHairY = -(rightHandPosition.pip.y - 0.5) * 2 * 0.1 + 0.15;
+
+            
+          }
+
+          // Calculate crosshair position
+          let crossHairPosition = {
+              x: penguin.position.x + Math.sin(penguinRotation + crossHairAngleOffset.x) * 2,
+              z: penguin.position.z + Math.cos(penguinRotation + crossHairAngleOffset.x) * 2,
+            };
+            
+
+            // update crosshair position
+            crosshair.position.set(
+              crossHairPosition.x,
+              crossHairY,
+              crossHairPosition.z
+            );
+
+            // rotate crosshair in y axis to face penguin
+            crosshair.rotation.y = penguinRotation;
+
+
+          // Calculate new lookAt position
+          cameraLookAtPoint = {
+            x: penguin.position.x + Math.sin(penguinRotation) * 10,
+            z: penguin.position.z + Math.cos(penguinRotation) * 10,
+          };
+
+          // Shooting ---
+          // If shooting, and there are snowballs left, shoot one
+
+
         }
 
-        // Update the camera rotation
+        // Move and Check collisions ------------------------------------------------
+        // Update snowball positions in scene
 
-        // Update snowball positions
+        // Update seal positions in scene
 
-        // Update seal positions
+        // Check for collisions between penguin and seals in scene
 
-        // Check for collisions between penguin and seals
-
-        // Check for collisions between snowballs and seals
+        // Check for collisions between snowballs and seals in scene
 
         // CAMERA CONTROLS -------------------------------------------------------
         // Update the camera to look at
+        threeCamera.lookAt(
+          cameraLookAtPoint.x,
+          viewOriginHeight,
+          cameraLookAtPoint.z
+        );
 
         // Render the scene
         render();
@@ -574,12 +679,18 @@
         outputHTML += "firstRightHandOpen: " + firstRightHandOpen + "<br>";
 
         // hand position variables
-        outputHTML += "rightHandPosition: " + rightHandPosition + "<br>";
+        outputHTML +=
+          "rightHandPosition.pip.x: " + rightHandPosition.pip.x + "<br>";
+        outputHTML +=
+          "rightHandPosition.pip.y: " + rightHandPosition.pip.y + "<br>";
         outputHTML += "rightHandOpen: " + rightHandOpen + "<br>";
 
         // game variables
-        outputHTML += "rotation: " + penguinRotation + "<br>";
+        outputHTML += "penguinRotation: " + penguinRotation + "<br>";
         outputHTML += "shooting: " + isShooting + "<br>";
+
+        // camera variables
+        outputHTML += "cameraLookAtPoint: " + cameraLookAtPoint + "<br>";
 
         // Display the output
         document.getElementById("output-debug").innerHTML = outputHTML;
