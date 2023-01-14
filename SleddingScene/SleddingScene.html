@@ -80,6 +80,7 @@
         <div id="penguinSpeed"></div>
         <div id="movmentDirection"></div>
         <div id="movementStatus"></div>
+        <div id="penguinPosition"></div>
       </div>
 
       <video class="input_video"></video>
@@ -103,6 +104,11 @@
       const maxAcceleration = 0.002;
       const deceleartion = 0.0015;
       const maxSpeed = 0.07;
+
+      var targetPosition = {
+        x: 15,
+        z: 13,
+      };
 
       // Controls variables
       var leftHandPosition = {
@@ -253,7 +259,7 @@
       var sceneLoaded = false;
 
       // Models
-      var fish, penguin, island, rod, bobber, alertModel, seal, babySeal;
+      var penguin, alertModel, directionIndicator;
 
       function initThree() {
         const container = document.createElement("div");
@@ -319,6 +325,28 @@
               penguin.position.set(0.08, 0.02, 0.03);
               penguin.rotation.set(0, (-10 / 180) * Math.PI, 0);
               scene.add(penguin);
+            });
+
+            // Direction indicator model
+            const glbPath2 = "DirectionTilted.gltf";
+            loader.load(glbPath2, function (gltf) {
+              console.log(gltf);
+              directionIndicator = gltf.scene;
+              directionIndicator.scale.set(0.06, 0.06, 0.06);
+              directionIndicator.position.set(0, 0.3, 0);
+              directionIndicator.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
+              scene.add(directionIndicator);
+            });
+
+            // Alert model for target destination
+            const glbPath3 = "Alert.gltf";
+            loader.load(glbPath3, function (gltf) {
+              console.log(gltf);
+              alertModel = gltf.scene;
+              alertModel.scale.set(0.6, 0.6, 0.6);
+              alertModel.position.set(targetPosition.x, 0.3, targetPosition.z);
+              alertModel.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
+              scene.add(alertModel);
             });
 
             // Scenery
@@ -408,9 +436,9 @@
               let penguinSpeedZ = penguinSpeed * Math.cos(movmentDirection);
 
               let accelerationX =
-                maxAcceleration * Math.sin(penguin.rotation.y);
+                maxAcceleration * Math.sin(penguin.rotation.y + Math.PI / 2);
               let accelerationZ =
-                maxAcceleration * Math.cos(penguin.rotation.y);
+                maxAcceleration * Math.cos(penguin.rotation.y + Math.PI / 2);
 
               penguinSpeedX += accelerationX;
               penguinSpeedZ += accelerationZ;
@@ -529,6 +557,16 @@
         threeCamera.position.z =
           penguin.position.z + 0.5 * Math.cos(penguin.rotation.y - Math.PI / 2);
 
+        // Update the position of the directionIndicator
+        directionIndicator.position.x = penguin.position.x;
+        directionIndicator.position.z = penguin.position.z;
+
+        // Update the rotation of the directionIndicator to point to the target relative to the penguin
+        directionIndicator.rotation.y = Math.atan2(
+          penguin.position.x - targetPosition.x,
+          penguin.position.z - targetPosition.z
+        );
+
         // Update the camera to look at the penguin
         threeControls.target.set(penguin.position.x, 0.25, penguin.position.z);
 
@@ -543,6 +581,8 @@
         document.getElementById("movmentDirection").innerHTML =
           movmentDirection;
         document.getElementById("movementStatus").innerHTML = movementStatus;
+        document.getElementById("penguinPosition").innerHTML =
+          "x: " + penguin.position.x + " z: " + penguin.position.z;
       }
 
       // Initialize ------------------------------------------------------------
