@@ -19,10 +19,88 @@
 </head>
 <title>SpyXPenguin</title>
 </head>
-<body></body>
+<body>
+    <div id="container" class="row">    
+        <button id="helpButton">Help</button>
+        <button id="startButton">Start</button>
+    </div>
+    <div class="popup center" id="help">
+        <button id="closeButton">x</button>
+        <h1>?</h1>
+        <p>Help papa penguin get his son back! The evil seals have taken baby penguin and it's up to you to save him (together with papa of course).</p>
+        <p>Use your hands in the different games we have and bring his baby home safely.</p>
+    </div>
+</body>
 <style>
     body {
-        margin: 0
+        margin: 0;
+        display: flex;
+        font-family: sans-serif;
+    }
+
+    .row {
+        flex-direction: row;
+    }
+
+    .column {
+        flex-direction: column;
+    }
+
+    #container {
+        display: flex;
+        position: absolute;
+        bottom: 0;
+        align-items: center;
+        justify-content: center;
+        width: 100vw;
+    }
+
+    button {
+        background-color: rgba(255,255,255,0.75);
+        font-size: 20px;
+        padding: 20px 50px;
+        border: transparent;
+        border-radius: 30px;
+        margin: 12px;
+    }
+
+    button:hover {
+        cursor: pointer;
+        border: 2px black solid;
+    }
+
+    .popup {
+        text-align: center;
+        background-color: rgba(255,255,255,.75);
+        color: black;
+        padding: 5% 15%;
+        border: 2px black solid;
+        border-radius: 20px;
+        display: none;
+        position: absolute
+    }
+    
+    .center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #closeButton {
+        padding: 2px;
+        width: 25px;
+        height: 25px;
+        position: absolute;
+        top: 0;
+        right: 0;
+        background-color: black;
+        color: white;
     }
 </style>
 <script type="module" src="./index.js"></script>

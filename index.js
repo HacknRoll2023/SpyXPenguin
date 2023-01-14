@@ -1,13 +1,29 @@
 // Three.js ------------------------------------------------------------
 import * as THREE from "three";
 
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
+const helpButton = document.getElementById("helpButton");
+const startButton = document.getElementById("startButton");
+const closeButton = document.getElementById("closeButton");
+
+helpButton.addEventListener("click", ()=> {
+    document.getElementsByClassName("popup")[0].style.display = "flex";
+});
+
+startButton.addEventListener("click", ()=> {
+    location.href = './'; // TODO: change 
+});
+
+closeButton.addEventListener("click", ()=> {
+    document.getElementsByClassName("popup")[0].style.display = "none";
+});
+
+
 // Scene
-let threeCamera, scene, renderer;
+let threeCamera, scene, renderer, animationId;
 var sceneLoaded = false;
 
 var penguin;
