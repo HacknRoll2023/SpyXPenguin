@@ -77,7 +77,9 @@
 
       <!-- Game debug -->
       <div class="game-debug">
-        
+        <div id="penguinSpeed"></div>
+        <div id="movmentDirection"></div>
+        <div id="movementStatus"></div>
       </div>
 
       <video class="input_video"></video>
@@ -96,6 +98,7 @@
 
       var penguinSpeed = 0;
       var movmentDirection = 0;
+      var movementStatus = "stopped";
 
       const maxAcceleration = 0.002;
       const deceleartion = 0.0015;
@@ -389,10 +392,10 @@
           // steering controls
           // if left and right hand are roughly the same height
           if (
-            leftHandPosition.y > 0.2 &&
-            leftHandPosition.y < 0.8 &&
-            rightHandPosition.y > 0.2 &&
-            rightHandPosition.y < 0.8
+            leftHandPosition.y > 0.1 &&
+            leftHandPosition.y < 0.9 &&
+            rightHandPosition.y > 0.1 &&
+            rightHandPosition.y < 0.9
           ) {
             // if left hand is higher than right hand
             if (leftHandPosition.y > rightHandPosition.y) {
@@ -433,8 +436,10 @@
             let penguinSpeedX = penguinSpeed * Math.sin(movmentDirection);
             let penguinSpeedZ = penguinSpeed * Math.cos(movmentDirection);
 
-            let accelerationX = maxAcceleration * Math.sin(penguin.rotation.y + Math.PI/2);
-            let accelerationZ = maxAcceleration * Math.cos(penguin.rotation.y + Math.PI/2);
+            let accelerationX =
+              maxAcceleration * Math.sin(penguin.rotation.y + Math.PI / 2);
+            let accelerationZ =
+              maxAcceleration * Math.cos(penguin.rotation.y + Math.PI / 2);
 
             penguinSpeedX += accelerationX;
             penguinSpeedZ += accelerationZ;
@@ -444,25 +449,72 @@
             );
             movmentDirection = Math.atan2(penguinSpeedX, penguinSpeedZ);
 
+            movementStatus = "accelerating";
+
             // make sure penguin magnitude of velocity is less than maxSpeed
             if (penguinSpeed > maxSpeed) {
               penguinSpeed = maxSpeed;
             }
+          } else {
+            // if penguinSpeed is less than 0.05 set penguinSpeed to 0
+            if (penguinSpeed < 0.01) {
+              penguinSpeed = 0;
+
+              movementStatus = "stopped";
+            } else {
+              // decelerate penguin by deceleartion in direction opposite of penguin facing (update penguinSpeed, movmentDirection)
+              let penguinSpeedX = penguinSpeed * Math.sin(movmentDirection);
+              let penguinSpeedZ = penguinSpeed * Math.cos(movmentDirection);
+
+              let accelerationX = deceleartion * Math.sin(movmentDirection);
+              let accelerationZ = deceleartion * Math.cos(movmentDirection);
+
+              penguinSpeedX -= accelerationX;
+              penguinSpeedZ -= accelerationZ;
+
+              penguinSpeed = Math.sqrt(
+                penguinSpeedX * penguinSpeedX + penguinSpeedZ * penguinSpeedZ
+              );
+
+              if (penguinSpeedX < 0) {
+                penguinSpeedX = 0;
+              }
+              if (penguinSpeedZ < 0) {
+                penguinSpeedZ = 0;
+              }
+
+              movementStatus = "decelerating";
+            }
           }
         } else {
-          // decelerate penguin by deceleartion in direction opposite of penguin facing (update penguinSpeed, movmentDirection)
-          let penguinSpeedX = penguinSpeed * Math.sin(movmentDirection);
-          let penguinSpeedZ = penguinSpeed * Math.cos(movmentDirection);
-
-          let accelerationX = deceleartion * Math.sin(movmentDirection);
-          let accelerationZ = deceleartion * Math.cos(movmentDirection);
-
-          penguinSpeedX -= accelerationX;
-          penguinSpeedZ -= accelerationZ;
-
           // if penguinSpeed is less than 0.05 set penguinSpeed to 0
           if (penguinSpeed < 0.01) {
             penguinSpeed = 0;
+
+            movementStatus = "stopped";
+          } else {
+            // decelerate penguin by deceleartion in direction opposite of penguin facing (update penguinSpeed, movmentDirection)
+            let penguinSpeedX = penguinSpeed * Math.sin(movmentDirection);
+            let penguinSpeedZ = penguinSpeed * Math.cos(movmentDirection);
+
+            let accelerationX = deceleartion * Math.sin(movmentDirection);
+            let accelerationZ = deceleartion * Math.cos(movmentDirection);
+
+            penguinSpeedX -= accelerationX;
+            penguinSpeedZ -= accelerationZ;
+
+            penguinSpeed = Math.sqrt(
+              penguinSpeedX * penguinSpeedX + penguinSpeedZ * penguinSpeedZ
+            );
+
+            if (penguinSpeedX < 0) {
+              penguinSpeedX = 0;
+            }
+            if (penguinSpeedZ < 0) {
+              penguinSpeedZ = 0;
+            }
+
+            movementStatus = "decelerating";
           }
         }
 
@@ -485,6 +537,12 @@
 
         // Render the scene
         render();
+
+        // Display penguinSpeed and movmentDirection
+        document.getElementById("penguinSpeed").innerHTML = penguinSpeed;
+        document.getElementById("movmentDirection").innerHTML =
+          movmentDirection;
+        document.getElementById("movementStatus").innerHTML = movementStatus;
       }
 
       // Initialize ------------------------------------------------------------
