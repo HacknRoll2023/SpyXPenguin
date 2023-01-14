@@ -8,6 +8,26 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 const videoElement = document.getElementsByClassName("input_video")[0];
 const canvasElement = document.getElementsByClassName("output_canvas")[0];
 const canvasCtx = canvasElement.getContext("2d");
+const resetButton = document.getElementById("reset");
+const instructions = document.getElementById("instructions");
+const closeButton = document.getElementById("close");
+const success = document.getElementById("success");
+
+resetButton.addEventListener("click", resetCamera);
+
+closeButton.addEventListener("click", () => {
+    instructions.style.display = "none";
+    resetButton.style.display = "block";
+    gameHasStarted = true;
+});
+
+function resetCamera() {
+    console.log("reset");
+    camera.zoom = 1;
+    camera.lookAt(0,0,0);
+    camera.updateProjectionMatrix();
+    render();
+}
 
 // hide the video element, and just show the canvas
 videoElement.style.display = "none";
@@ -22,21 +42,18 @@ var tree, penguin;
 
 var spaceCount = 0;
 
-var foundPenguin = false;
+// Game state
+var foundPenguin = false, gameHasStarted = false;
 
 init();
 render();
 
 function init() {
-    //
     const container = document.createElement("div");
     document.body.appendChild(container);
 
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 20);
     camera.position.set(10, 2, 8);
-
-    // rotate camera to face the penguin
-    //camera.lookAt(2, 2, 2);
 
     scene = new THREE.Scene();
     clock = new THREE.Clock();
@@ -154,6 +171,15 @@ function onResults(results) {
     canvasCtx.translate(canvasElement.width, 0);
     canvasCtx.scale(-1, 1);
     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+    
+    canvasCtx.font = "20px serif";
+    canvasCtx.fillText("<", 0, canvasElement.clientHeight/2);
+    canvasCtx.fillText(">", canvasElement.clientWidth, canvasElement.clientHeight/2);
+    canvasCtx.fillText("^", canvasElement.clientWidth/2, 30);
+    canvasCtx.fillText("v", canvasElement.clientWidth/2, 170);
+    
+    console.log(canvasElement.clientLeft)
+
     if (results.multiHandLandmarks) {
         for (const landmarks of results.multiHandLandmarks) {
             drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
@@ -177,18 +203,18 @@ function onResults(results) {
     // pinky tip - 20
 
     //   display the coordinates of the tips of the fingers for each hand
-    if (results.multiHandLandmarks) {
+    if (results.multiHandLandmarks && gameHasStarted) {
         for (let i = 0; i < results.multiHandedness.length; i++) {
             const classification = results.multiHandedness[i];
             const isRightHand = classification.label === "Right";
             const digitPosition = isRightHand ? digitPositions[0] : digitPositions[1];
-            digitPosition.innerText = `
+            /* digitPosition.innerText = `
                     Thumb: [${results.multiHandLandmarks[i][4].x.toFixed(2)}, ${results.multiHandLandmarks[i][4].y.toFixed(2)}]
                     Index: [${results.multiHandLandmarks[i][8].x.toFixed(2)}, ${results.multiHandLandmarks[i][8].y.toFixed(2)}]
                     Middle: [${results.multiHandLandmarks[i][12].x.toFixed(2)}, ${results.multiHandLandmarks[i][12].y.toFixed(2)}]
                     Ring: [${results.multiHandLandmarks[i][16].x.toFixed(2)}, ${results.multiHandLandmarks[i][16].y.toFixed(2)}]
                     Pinky: [${results.multiHandLandmarks[i][20].x.toFixed(2)}, ${results.multiHandLandmarks[i][20].y.toFixed(2)}]
-                `;
+                `; */
 
             // use left hand to  zoom in and out
             if (isRightHand && !foundPenguin) {
@@ -239,6 +265,11 @@ function onResults(results) {
                     if (frustum.containsPoint(penguin.position)) {
                         // Do something with the position...
                         console.log("found penguin");
+                        
+                        setTimeout(function() {
+                            success.style.display = "block";
+                            //your code to be executed after 1 second
+                          }, 2500);
                     } else {
                         console.log("out of view")
                     }
@@ -270,12 +301,3 @@ const webcam = new Camera(videoElement, {
 });
 
 webcam.start();
-
-document.getElementById("reset").addEventListener("click", resetCamera());
-
-function resetCamera() {
-    console.log("reset");
-    camera.zoom = 1;
-    camera.updateProjectionMatrix();
-    render();
-}

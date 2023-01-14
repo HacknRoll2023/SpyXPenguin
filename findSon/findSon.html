@@ -19,22 +19,28 @@
 
     <body>
         <div class="container">
-            <canvas class="output_canvas" width="329px" height="185px"></canvas>
-            <div class="digit-positions-left">
-                <div class="digit-position">
-                    <p class="digit-positions__label">Left Hand</p>
-                    <div class="digit-position__value"></div>
+            <canvas id="cameraDrawing" class="output_canvas" width="320px" height="180px"></canvas>
+            <button id="reset" style="display: none">Reset Camera</button>
+            <video class="input_video" style="display: none"></video>
+        </div>
+        <div id="instructions" class="popup center">
+            <h2>Help to find the baby penguin!</h2>
+            <div class="row">
+                <div class="col">
+                    <p>Pinch to zoom in.</p>
+                    <img src="../images/zoomin.png" alt="Pinch" />
+                </div>
+                <div class="col">
+                    <p>Zoom out like so.</p>
+                    <img src="../images/zoomout.png" alt="Pinch" />
                 </div>
             </div>
-
-            <div class="digit-positions-right">
-                <div class="digit-position">
-                    <p class="digit-positions__label">Right Hand</p>
-                    <div class="digit-position__value"></div>
-                </div>
-            </div>
-            <button id="reset">Reset Camera</button>
-            <video class="input_video"></video>
+            <p>To pan the scene, while pinching move up, down, left or right.</p>
+            <button id="close">Let's Go!</button>
+        </div>
+        <div id="success" class="popup center">
+            <h2>Success!</h2>
+            <button onclick="location.href = '../'">Next</button>
         </div>
         <script type="module" src="./findSon.js"></script>
         <style>
@@ -43,9 +49,71 @@
                 z-index: 10;
                 float: left;
             }
-            
+
             body {
                 margin: 0;
+                font-family: sans-serif;
+            }
+
+            #success {
+                display: none;
+            }
+
+            #instructions {
+                display: show;
+            }
+
+            .popup {
+                text-align: center;
+                background-color: black;
+                color: white;
+                padding: 5% 15%;
+                border-radius: 20px;
+                display: flex;
+            }
+
+            .row {
+                display: flex;
+                flex-direction: row;
+            }
+
+            .col {
+                flex-direction: column;
+            }
+
+            .center {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            img {
+                max-height: 200px;
+            }
+
+            button {
+                background: url("../textures/textureImages/snowTexture.jpg") no-repeat;
+                font-size: 16px;
+                border-radius: 20px;
+                border: transparent 2px;
+                border: none;
+                padding: 15px 32px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 20px;
+                margin: 4px 2px;
+            }
+
+            button:hover {
+                cursor: pointer;
+                text-decoration: underline;
             }
         </style>
     </body>
