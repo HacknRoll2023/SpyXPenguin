@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "../build/three.module.js",
+                    "three/addons/": "../jsm/"
+                }
+            }
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+        <title>Easter Egg</title>
+    </head>
+
+    <body>
+        <audio id="bgm" src="../music/soundscrate-tread-carefully.mp3" loop preload="auto"></audio>
+        <div class="container">
+            <canvas id="cameraDrawing" class="output_canvas" width="320px" height="180px"></canvas>
+            <button id="reset" style="display: none">Reset Camera</button>
+            <video class="input_video" style="display: none"></video>
+        </div>
+        <button onclick="location.href = '../index.html'">Next</button>
+        <script type="module" src="./squish.js"></script>
+        <style>
+            .container {
+                position: absolute;
+                z-index: 10;
+                float: left;
+            }
+
+            body {
+                margin: 0;
+                font-family: sans-serif;
+            }
+        </style>
+    </body>
+</html>
