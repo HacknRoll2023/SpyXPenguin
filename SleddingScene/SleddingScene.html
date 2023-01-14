@@ -219,7 +219,7 @@
       //   z: 13,
       // };
 
-      var numTrees = 30;
+      var numIceObstacles = 30;
 
       var iceObstacleLocations = [];
 
@@ -237,7 +237,7 @@
         ],
       };
 
-      for (var i = 0; i < numTrees; i++) {
+      for (var i = 0; i < numIceObstacles; i++) {
         var iceObstacleLocation = {
           x: Math.floor(
             Math.random() * (iceObstacleRange.x[1] - iceObstacleRange.x[0]) +
@@ -526,7 +526,7 @@
               iceObstacle.scale.set(0.1, 0.1, 0.1);
 
               // Add all iceObstacles to the scene
-              for (var i = 0; i < numTrees; i++) {
+              for (var i = 0; i < numIceObstacles; i++) {
                 let iceObstacle2 = gltf.scene.clone();
                 iceObstacle2.position.set(
                   iceObstacleLocations[i].x,

@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Fighting off evil Seals!</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+    />
+
+    <!-- <link rel="icon" href="../images/icon.png"> -->
+
+    <!-- Handtracking scripts -->
+    <meta charset="utf-8" />
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <style>
+      .handtrack-container {
+        position: absolute;
+        z-index: 10;
+        float: left;
+      }
+
+      /* Overlays */
+      .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 100;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #overlay-win {
+        display: none;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #overlay-lose {
+        display: none;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #overlay-start {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .overlay-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+      }
+
+      .overlay-content h1 {
+        margin-top: 0;
+      }
+
+      .overlay-content p {
+        margin-bottom: 0;
+      }
+
+      .overlay-content button {
+        padding: 10px 20px;
+        font-size: 20px;
+        border: none;
+        border-radius: 5px;
+        background-color: #333;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      .overlay-content button:hover {
+        background-color: #555;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Import maps polyfill -->
+    <!-- Remove this when import maps will be widely supported -->
+    <script
+      async
+      src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"
+    ></script>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "../build/three.module.js",
+          "three/addons/": "../jsm/"
+        }
+      }
+    </script>
+
+    <!-- Handtracking -->
+    <div class="handtrack-container">
+      <canvas class="output_canvas" width="320px" height="185px"></canvas>
+
+      <div class="container">
+        <div class="digit-positions-left">
+          <div class="digit-position">
+            <p class="digit-positions__label">Right Hand</p>
+            <div class="digit-position__value"></div>
+          </div>
+        </div>
+
+        <div class="digit-positions-right">
+          <div class="digit-position">
+            <p class="digit-positions__label">Left Hand</p>
+            <div class="digit-position__value"></div>
+          </div>
+        </div>
+
+        <br />
+      </div>
+
+      <!-- Game debug -->
+      <div id="output-debug"></div>
+      <div id="penguinLives"></div>
+
+      <video class="input_video"></video>
+    </div>
+
+    <div id="overlay-start" class="overlay">
+      <div class="overlay-content">
+        <h1>Fight Ring screen</h1>
+        <p>
+          Use your hands to spin around and hit the seals. You have 3 lives.
+        </p>
+        <p>
+          <button
+            id="startButton"
+            onclick="gameState = 'playing'; document.getElementById('overlay-start').style.display = 'none';"
+          >
+            Start
+          </button>
+        </p>
+      </div>
+    </div>
+
+    <div id="overlay-lose" class="overlay">
+      <div class="overlay-content">
+        <h1>Game Over</h1>
+        <p>
+          <button id="startButton" onclick="location.reload();">
+            Play Again
+          </button>
+        </p>
+      </div>
+    </div>
+
+    <div id="overlay-win" class="overlay">
+      <div class="overlay-content">
+        <h1>You Win!</h1>
+        <p>
+          <button id="startButton" onclick="location.reload();">
+            Play Again
+          </button>
+        </p>
+      </div>
+    </div>
+
+    <script type="module">
+      // Game variables ------------------------------------------------------------
+      var gameState = "playing";
+
+      var penguinLives = 5;
+
+      // Scene variables
+      var penguinPosition = {
+        x: 0,
+        z: 0,
+      };
+      var penguinRotation = 0;
+
+      var isShooting = false;
+
+      var numSnowballs = 0;
+      var maxSnowballs = 5;
+      var snowballPositions = [];
+      /*
+        {
+          idx: 0,
+          x: 0,
+          z: 0,
+          rotation: 0,
+          isAlive: true,
+        }
+      */
+      var snowballSpeed = 0.4;
+      var snowballRadius = 0.2;
+
+      // initialize snowballPositions
+      for (var i = 0; i < maxSnowballs; i++) {
+        snowballPositions.push({
+          idx: i,
+          x: 0,
+          z: 0,
+          rotation: 0,
+          isAlive: false,
+        });
+      }
+
+      var maxSeals = 5;
+      var numSeals = 0;
+      var requiredSealKills = 10;
+      var sealPositions = [];
+      /*
+        {
+          idx: 0,
+          x: 0,
+          z: 0,
+          rotation: 0,
+          isAlive: true,
+        }
+      */
+      var sealSpeed = 0.03;
+      var sealRadius = 0.5;
+
+      // initialize sealPositions
+      for (var i = 0; i < maxSeals; i++) {
+        sealPositions.push({
+          idx: i,
+          x: 0,
+          z: 0,
+          rotation: 0,
+          isAlive: false,
+        });
+      }
+
+      var fightRingRadius = 20; // spawn area for seals
+
+      var penguinHitRadius = 0.5;
+      var sealHitRadius = 0.5;
+
+      // for shooting
+      var crossHair = {
+        x: 0,
+        y: 0,
+      };
+
+      var crossHairY = 0.2;
+
+      var crossHairAngleOffset = {
+        x: 0,
+      };
+
+      // For camera
+      var cameraLookAtPoint = {
+        x: 0,
+        z: 0,
+      };
+
+      var lookAtPointDistance = 10;
+
+      var viewOriginHeight = 0.2;
+
+      // Right hand variables -------------------------------------------------------
+      var rightHandDetected = false;
+
+      // Controls variables (based on Middle Finger pip [number 10])
+      var rightHandPosition = {
+        dip: {
+          x: 0,
+          y: 0,
+        },
+        pip: {
+          x: 0,
+          y: 0,
+        },
+      };
+
+      var rightHandOpen = false;
+      var firstRightHandOpen = false;
+
+      // Handtracking ------------------------------------------------------------
+      const videoElement = document.getElementsByClassName("input_video")[0];
+      const canvasElement = document.getElementsByClassName("output_canvas")[0];
+      const canvasCtx = canvasElement.getContext("2d");
+
+      const digitPositions = document.getElementsByClassName(
+        "digit-position__value"
+      );
+
+      // hide the video element, and just show the canvas
+      videoElement.style.display = "none";
+
+      // Function to handle handtracking
+      function onResults(results) {
+        // Mirror the video feed and draw the results on the canvas
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.translate(canvasElement.width, 0);
+        canvasCtx.scale(-1, 1);
+        canvasCtx.drawImage(
+          results.image,
+          0,
+          0,
+          canvasElement.width,
+          canvasElement.height
+        );
+        if (results.multiHandLandmarks) {
+          for (const landmarks of results.multiHandLandmarks) {
+            drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+              color: "#00FF00",
+              lineWidth: 5,
+            });
+            drawLandmarks(canvasCtx, landmarks, {
+              color: "#FF0000",
+              lineWidth: 2,
+            });
+          }
+        }
+
+        canvasCtx.restore();
+
+        // wrist - 0
+        // thumb tip - 4
+        // index tip - 8
+        // middle tip - 12
+        // ring tip - 16
+        // pinky tip - 20
+
+        //   display the coordinates of the tips of the fingers for each hand
+        if (results.multiHandLandmarks) {
+          rightHandDetected = false;
+
+          for (let i = 0; i < results.multiHandedness.length; i++) {
+            const classification = results.multiHandedness[i];
+            const isRightHand = !(classification.label === "Right"); // Mirrored
+
+            if (isRightHand) {
+              rightHandDetected = true;
+              // Get right hand position
+
+              // Right middle pip (main tracking)
+              rightHandPosition.pip.x = results.multiHandLandmarks[i][10].x;
+              rightHandPosition.pip.y = results.multiHandLandmarks[i][10].y;
+
+              // Right middle dip
+              rightHandPosition.dip.x = results.multiHandLandmarks[i][11].x;
+              rightHandPosition.dip.y = results.multiHandLandmarks[i][11].y;
+
+              // Check if the right hand is open (middle finger pip is higher than dip)
+              if (rightHandPosition.dip.y < rightHandPosition.pip.y) {
+                rightHandOpen = true;
+              } else {
+                rightHandOpen = false;
+              }
+            }
+            // display the coordinates of the tips of the fingers for each hand
+            const digitPosition = isRightHand
+              ? digitPositions[0]
+              : digitPositions[1];
+
+            digitPosition.innerText = `
+                          Thumb: [${results.multiHandLandmarks[i][4].x.toFixed(
+                            2
+                          )}, ${results.multiHandLandmarks[i][4].y.toFixed(2)}]
+                          Index: [${results.multiHandLandmarks[i][8].x.toFixed(
+                            2
+                          )}, ${results.multiHandLandmarks[i][8].y.toFixed(2)}]
+                          Middle: [${results.multiHandLandmarks[
+                            i
+                          ][12].x.toFixed(2)}, ${results.multiHandLandmarks[
+              i
+            ][12].y.toFixed(2)}]
+                          Ring: [${results.multiHandLandmarks[i][16].x.toFixed(
+                            2
+                          )}, ${results.multiHandLandmarks[i][16].y.toFixed(2)}]
+                          Pinky: [${results.multiHandLandmarks[i][20].x.toFixed(
+                            2
+                          )}, ${results.multiHandLandmarks[i][20].y.toFixed(2)}]
+                      `;
+          }
+        }
+
+        updateGame();
+      }
+
+      // Model set up configuration
+      const hands = new Hands({
+        locateFile: (file) => {
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        },
+      });
+
+      hands.setOptions({
+        maxNumHands: 2,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+      hands.onResults(onResults);
+
+      const handtrackCamera = new Camera(videoElement, {
+        onFrame: async () => {
+          await hands.send({ image: videoElement });
+        },
+        width: 1280,
+        height: 720,
+      });
+
+      // Three.js ------------------------------------------------------------
+      import * as THREE from "three";
+
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+      import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+
+      // Scene
+      let threeCamera, scene, renderer;
+      var threeControls;
+
+      var sceneLoaded = false;
+
+      // Models
+      var penguin, crosshair, fortress;
+      var snowballs = [];
+      var seals = [];
+
+      function initThree() {
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+
+        threeCamera = new THREE.PerspectiveCamera(
+          45,
+          window.innerWidth / window.innerHeight,
+          0.25,
+          20
+        );
+        threeCamera.position.set(0, viewOriginHeight, 0);
+        // rotate camera to face straight ahead
+        threeCamera.lookAt(
+          cameraLookAtPoint.x,
+          viewOriginHeight,
+          cameraLookAtPoint.z
+        );
+
+        scene = new THREE.Scene();
+        const clock = new THREE.Clock();
+
+        // Load the background
+        new RGBELoader()
+          .setPath("./../textures/equirectangular/")
+          .load("kloppenheim_06_puresky_2k.hdr", function (texture) {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+
+            scene.background = texture;
+            scene.environment = texture;
+
+            // // load in red, green and blue cubes for orientation -----------------------------
+            const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // green
+            const cube1 = new THREE.Mesh(geometry, material);
+            cube1.position.set(0, 0.2, 0);
+            scene.add(cube1);
+
+            const geometry2 = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+            const material2 = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // red
+            const cube2 = new THREE.Mesh(geometry2, material2);
+            cube2.position.set(0.2, 0, 0);
+            scene.add(cube2);
+
+            const geometry3 = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+            const material3 = new THREE.MeshBasicMaterial({ color: 0x0000ff }); // blue
+            const cube3 = new THREE.Mesh(geometry3, material3);
+            cube3.position.set(0, 0, 0.2);
+            scene.add(cube3);
+
+            render();
+
+            // load in models ---------------------------------------------------------------
+            // model set up
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath("../jsm/libs/draco/");
+
+            const loader = new GLTFLoader().setPath("../models/");
+            loader.setDRACOLoader(dracoLoader);
+
+            // Penguin model
+            const glbPath = "Penguin.gltf";
+            loader.load(glbPath, function (gltf) {
+              console.log(gltf);
+              penguin = gltf.scene;
+              penguin.scale.set(0.06, 0.06, 0.06);
+              penguin.position.set(0, 0.01, 0);
+              penguin.rotation.set(0, (-10 / 180) * Math.PI, 0);
+              scene.add(penguin);
+            });
+
+            // Add fortress model for target destination
+            const glbPath4 = "ArenaCentered.gltf";
+            loader.load(glbPath4, function (gltf) {
+              console.log(gltf);
+              fortress = gltf.scene;
+              fortress.scale.set(0.2, 0.2, 0.2);
+              fortress.position.set(0, 0, 0);
+              fortress.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
+              scene.add(fortress);
+            });
+
+            // Crosshair model
+            const glbPath2 = "Crosshair.gltf";
+            loader.load(glbPath2, function (gltf) {
+              console.log(gltf);
+              crosshair = gltf.scene;
+              crosshair.scale.set(0.05, 0.05, 0.05);
+              crosshair.position.set(lookAtPointDistance / 2, 0.2, 2);
+              crosshair.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
+              scene.add(crosshair);
+            });
+
+            // Snowball model for target destination
+            const glbPath3 = "Snowball.gltf";
+            loader.load(glbPath3, function (gltf) {
+              var snowballProjectile = gltf.scene;
+              snowballProjectile.scale.set(0.025, 0.025, 0.025);
+
+              // Add all snowballs to the scene
+              for (var i = 0; i < maxSnowballs; i++) {
+                let snowballProjectile2 = gltf.scene.clone();
+                snowballProjectile2.position.set(0, -0.2, 0);
+                scene.add(snowballProjectile2);
+                snowballs.push(snowballProjectile2);
+              }
+            });
+
+            // Seals
+            const glbPath5 = "SealLeftRotate.gltf";
+            loader.load(glbPath5, function (gltf) {
+              var sealEnemy = gltf.scene;
+              sealEnemy.scale.set(0.1, 0.1, 0.1);
+              // note seal model is facing the opposite direction to the penguin
+
+              // Add all sealEnemy to the scene
+              for (var i = 0; i < maxSeals; i++) {
+                let sealEnemy = gltf.scene.clone();
+                sealEnemy.position.set(0, -0.4, 0);
+                scene.add(sealEnemy);
+                seals.push(sealEnemy);
+              }
+
+              initSeals();
+            });
+
+            var groundTexture = new THREE.TextureLoader().load(
+              "./../textures/textureImages/snowTexture3.jpg"
+            );
+            groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+            groundTexture.repeat.set(10000, 10000);
+            groundTexture.anisotropy = 64;
+            groundTexture.encoding = THREE.sRGBEncoding;
+
+            var groundMaterial = new THREE.MeshStandardMaterial({
+              map: groundTexture,
+            });
+
+            var mesh = new THREE.Mesh(
+              new THREE.PlaneBufferGeometry(10000, 10000),
+              groundMaterial
+            );
+            mesh.position.y = 0;
+            mesh.rotation.x = -Math.PI / 2;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+          });
+
+        // renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild(renderer.domElement);
+
+        // // Orbit controls
+        // threeControls = new OrbitControls(threeCamera, renderer.domElement);
+        // threeControls.addEventListener("change", render); // use if there is no animation loop
+        // threeControls.minDistance = 1;
+        // threeControls.maxDistance = 5;
+        // threeControls.target.set(0, 0.25, 0);
+        // threeControls.update();
+
+        window.addEventListener("resize", onWindowResize);
+
+        sceneLoaded = true;
+      }
+
+      function initSeals() {
+        // Init 5 seals
+        for (var i = 0; i < maxSeals; i++) {
+          // pick a random rotation
+          var randomRotation = Math.random() * 2 * Math.PI;
+
+          // pick a random distance from the center between 8 and 10
+          var randomDistance = Math.random() * 2 + 8;
+
+          // calculate the x and z position
+          var x = Math.cos(randomRotation) * randomDistance;
+          var z = Math.sin(randomRotation) * randomDistance;
+
+          // set the position of the seal
+          seals[i].position.set(x, 0.1, z);
+
+          // set the rotation of the seal to face the center
+          seals[i].rotation.y = Math.atan2(-x, -z);
+
+          // increment numSeals
+          numSeals++;
+
+          // set the seal to be active
+          sealPositions[i].isActive = true;
+          sealPositions[i].rotation = Math.atan2(-x, -z);
+        }
+      }
+
+      function onWindowResize() {
+        threeCamera.aspect = window.innerWidth / window.innerHeight;
+        threeCamera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        render();
+      }
+
+      function render() {
+        renderer.render(scene, threeCamera);
+      }
+
+      // Game logic ------------------------------------------------------------
+      function updateGame() {
+        if (!sceneLoaded) {
+          return;
+        }
+
+        if (rightHandDetected) {
+          if (rightHandOpen) {
+            if (!firstRightHandOpen) {
+              firstRightHandOpen = true;
+              isShooting = true;
+            } else {
+              isShooting = false;
+            }
+          } else {
+            firstRightHandOpen = false;
+            isShooting = false;
+          }
+
+          // Thresholds
+          // [> 0.8] for turning left, [< 0.2] for turning right
+
+          crossHairAngleOffset.x;
+
+          // Update the penguin's rotation
+          if (rightHandPosition.pip.x > 0.75) {
+            // Turn left
+            penguinRotation += 0.05;
+          } else if (rightHandPosition.pip.x < 0.25) {
+            // Turn right
+            penguinRotation -= 0.05;
+          } else {
+            // Aim crosshair
+            // [0.75 - 0.25] for aiming crosshair x rotation, mappping to [-0.25, 0.25] radians off center
+            crossHairAngleOffset.x = (rightHandPosition.pip.x - 0.5) * 2 * 0.5;
+
+            // [0.95 - 0.05] for aiming crosshair y position, mapping to [0.1, 0.2] y axis
+            crossHairY = -(rightHandPosition.pip.y - 0.5) * 2 * 0.1 + 0.15;
+          }
+
+          // Calculate crosshair position
+          let crossHairPosition = {
+            x:
+              penguin.position.x +
+              Math.sin(penguinRotation + crossHairAngleOffset.x) * 2,
+            z:
+              penguin.position.z +
+              Math.cos(penguinRotation + crossHairAngleOffset.x) * 2,
+          };
+
+          // update crosshair position
+          crosshair.position.set(
+            crossHairPosition.x,
+            crossHairY,
+            crossHairPosition.z
+          );
+
+          // rotate crosshair in y axis to face penguin
+          crosshair.rotation.y = penguinRotation;
+
+          // Calculate new lookAt position
+          cameraLookAtPoint = {
+            x: penguin.position.x + Math.sin(penguinRotation) * 10,
+            z: penguin.position.z + Math.cos(penguinRotation) * 10,
+          };
+
+          // Shooting ---
+          // If shooting, and there are snowballs left, shoot one
+          if (isShooting && numSnowballs < maxSnowballs - 1) {
+            // Find a snowball positions that is not active
+            let snowball = snowballPositions.find((s) => !s.isActive);
+
+            // Set the snowball's position to the penguin's position
+            snowballs[snowball.idx].position.set(
+              penguin.position.x,
+              penguin.position.y + 0.1,
+              penguin.position.z
+            );
+
+            console.log(snowballs[snowball.idx].position);
+
+            // Set the snowball's rotation the angle between the penguin and the crosshair
+            snowballs[snowball.idx].rotation.y =
+              penguinRotation + crossHairAngleOffset.x;
+            snowball.rotation = penguinRotation + crossHairAngleOffset.x;
+
+            // Set the snowball's velocity
+            snowball.velocity = {
+              x:
+                Math.sin(penguinRotation + crossHairAngleOffset.x) *
+                snowballSpeed,
+              z:
+                Math.cos(penguinRotation + crossHairAngleOffset.x) *
+                snowballSpeed,
+            };
+
+            // Set the snowball's active state to true
+            snowball.isActive = true;
+
+            // Increment the number of snowballs
+            numSnowballs++;
+
+            console.log("Shot snowball:", snowball.idx);
+            console.log(snowballs[snowball.idx].position);
+          }
+        }
+
+        // Move and Check collisions ------------------------------------------------
+        // Update seal positions in scene
+        sealPositions.forEach((seal) => {
+          if (seal.isActive) {
+            // Update seal position
+            seals[seal.idx].position.x += Math.sin(seal.rotation) * sealSpeed;
+            seals[seal.idx].position.z += Math.cos(seal.rotation) * sealSpeed;
+
+            // Check for collisions with penguin
+            if (
+              seals[seal.idx].position.x >
+                penguin.position.x - (sealRadius + penguinHitRadius) &&
+              seals[seal.idx].position.x <
+                penguin.position.x + (sealRadius + penguinHitRadius) &&
+              seals[seal.idx].position.z >
+                penguin.position.z - (sealRadius + penguinHitRadius) &&
+              seals[seal.idx].position.z <
+                penguin.position.z + (sealRadius + penguinHitRadius)
+            ) {
+              // Seal hit the penguin
+              // pick a random rotation
+              var randomRotation = Math.random() * 2 * Math.PI;
+
+              // pick a random distance from the center between 8 and 10
+              var randomDistance = Math.random() * 2 + 8;
+
+              // calculate the x and z position
+              var x = Math.cos(randomRotation) * randomDistance;
+              var z = Math.sin(randomRotation) * randomDistance;
+
+              // set the position of the seal
+              seals[seal.idx].position.set(x, 0.1, z);
+
+              // set the rotation of the seal to face the center
+              seals[seal.idx].rotation.y = Math.atan2(-x, -z);
+
+              // increment numSeals
+              numSeals++;
+
+              seal.rotation = Math.atan2(-x, -z);
+
+              penguinLives--;
+
+              console.log("Seal hit the penguin");
+
+              if (penguinLives <= 0) {
+                // Game over
+                console.log("Game over");
+                document.getElementById("overlay-lose").style.display = "block";
+              }
+            }
+          }
+        });
+
+        // Update snowball positions in scene
+        snowballPositions.forEach((snowball) => {
+          if (snowball.isActive) {
+            // Update snowball position
+            snowballs[snowball.idx].position.x +=
+              Math.sin(snowball.rotation) * snowballSpeed;
+            snowballs[snowball.idx].position.z +=
+              Math.cos(snowball.rotation) * snowballSpeed;
+
+            // Check for collisions with seals
+            sealPositions.forEach((seal) => {
+              if (seal.isActive) {
+                // Check for collision with seal
+                if (
+                  snowballs[snowball.idx].position.x >
+                    seals[seal.idx].position.x -
+                      (sealRadius + snowballRadius) &&
+                  snowballs[snowball.idx].position.x <
+                    seals[seal.idx].position.x +
+                      (sealRadius + snowballRadius) &&
+                  snowballs[snowball.idx].position.z >
+                    seals[seal.idx].position.z -
+                      (sealRadius + snowballRadius) &&
+                  snowballs[snowball.idx].position.z <
+                    seals[seal.idx].position.z + (sealRadius + snowballRadius)
+                ) {
+                  // Snowball ----------------
+                  // Set snowball to inactive
+                  snowball.isActive = false;
+
+                  // Update the number of snowballs
+                  numSnowballs--;
+
+                  // Update the snowball's position
+                  snowballs[snowball.idx].position.set(0, -10, 0);
+
+                  // Seal ----------------
+                  // Update the seal's position
+                  seals[seal.idx].position.set(2, -0.5, 2);
+
+                  // Set seal to inactive
+                  seal.isActive = false;
+                  seal.rotation = seals[seal.idx].rotation.y;
+
+                  // Update the number of seals
+                  numSeals--;
+
+                  // Reduce requiredSealKills by 1
+                  requiredSealKills--;
+
+                  if (requiredSealKills <= 0) {
+                    // End the game
+                    document.getElementById("overlay-win").style.display =
+                      "block";
+                  } else {
+                    if (requiredSealKills >= numSeals && numSeals < maxSeals) {
+                      // Add a seal TODO: Add a seal
+                      // find an inactive seal
+                      const inactiveSeal = sealPositions.find(
+                        (seal) => !seal.isActive
+                      );
+
+                      // Set the seal to active
+                      inactiveSeal.isActive = true;
+
+                      // pick a random rotation
+                      var randomRotation = Math.random() * 2 * Math.PI;
+
+                      // pick a random distance from the center between 8 and 10
+                      var randomDistance = Math.random() * 2 + 8;
+
+                      // calculate the x and z position
+                      var x = Math.cos(randomRotation) * randomDistance;
+                      var z = Math.sin(randomRotation) * randomDistance;
+
+                      // set the position of the seal
+                      seals[inactiveSeal.idx].position.set(x, 0.1, z);
+
+                      // set the rotation of the seal to face the center
+                      seals[inactiveSeal.idx].rotation.y = Math.atan2(-x, -z);
+
+                      // increment numSeals
+                      numSeals++;
+
+                      inactiveSeal.rotation = Math.atan2(-x, -z);
+                    }
+                  }
+                }
+              }
+            });
+
+            // Check for collisions with the ground
+            if (
+              snowballs[snowball.idx].position.y < 0 ||
+              snowballs[snowball.idx].position.x < -10 ||
+              snowballs[snowball.idx].position.x > 10 ||
+              snowballs[snowball.idx].position.z < -10 ||
+              snowballs[snowball.idx].position.z > 10
+            ) {
+              // Set snowball to inactive
+              snowball.isActive = false;
+
+              // Update the number of snowballs
+              numSnowballs--;
+
+              // Update the snowball's position
+              snowballs[snowball.idx].position.set(0, -10, 0);
+            }
+          }
+        });
+
+        // CAMERA CONTROLS -------------------------------------------------------
+        // Update the camera to look at
+        threeCamera.lookAt(
+          cameraLookAtPoint.x,
+          viewOriginHeight,
+          cameraLookAtPoint.z
+        );
+
+        // Render the scene
+        render();
+
+        // // Display rotation and shooting --------------------------------
+        var outputHTML = "";
+
+        // // gesture variables
+        // outputHTML += "rightHandOpen: " + rightHandOpen + "<br>";
+        // outputHTML += "firstRightHandOpen: " + firstRightHandOpen + "<br>";
+
+        // // hand position variables
+        // outputHTML +=
+        //   "rightHandPosition.pip.x: " + rightHandPosition.pip.x + "<br>";
+        // outputHTML +=
+        //   "rightHandPosition.pip.y: " + rightHandPosition.pip.y + "<br>";
+        // outputHTML += "rightHandOpen: " + rightHandOpen + "<br>";
+
+        // // game variables
+        // outputHTML += "penguinRotation: " + penguinRotation + "<br>";
+        // outputHTML += "shooting: " + isShooting + "<br>";
+
+        // // camera variables
+        // outputHTML += "cameraLookAtPoint: " + cameraLookAtPoint + "<br>";
+
+        // game variables
+        outputHTML += "requiredSealKills: " + requiredSealKills + "<br>";
+
+        // Display the output
+        document.getElementById("output-debug").innerHTML = outputHTML;
+
+        // Display penguinLives ---------------------------------------------------
+        document.getElementById("penguinLives").innerHTML =
+          "lives: " + penguinLives;
+      }
+
+      // Initialize ------------------------------------------------------------
+      initThree();
+      render();
+
+      handtrackCamera.start();
+    </script>
+  </body>
+</html>
