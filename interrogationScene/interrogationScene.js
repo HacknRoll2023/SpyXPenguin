@@ -8,12 +8,16 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
 // Scene
 let threeCamera, scene, renderer;
-var threeControls;
-
 var sceneLoaded = false;
 
+var numOfClicks = 0;
+
 // Models
-var penguin, knife, directionIndicator, fortress;
+var penguin, fortress;
+
+const captionContainer = document.getElementById("captionContainer");
+const nextButton = document.getElementById("next");
+const caption = document.getElementById("caption");
 
 function initThree() {
     const container = document.createElement("div");
@@ -21,20 +25,17 @@ function initThree() {
 
     threeCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 20);
     threeCamera.position.set(2, 1, 3);
-    threeCamera.zoom = 3
+    threeCamera.zoom = 3;
 
     setTimeout(() => {
         // replace with game loop later
-        //window.requestAnimationFrame(step);
         render();
     }, 1000);
 
     // rotate camera to face the penguin
-    //threeCamera.lookAt(0, 0, 0);
     threeCamera.zoom = 0.5;
 
     scene = new THREE.Scene();
-    const clock = new THREE.Clock();
 
     // Load the background
     new RGBELoader().setPath("./../textures/equirectangular/").load("kloppenheim_06_puresky_2k.hdr", function (texture) {
@@ -43,25 +44,24 @@ function initThree() {
         scene.background = texture;
         scene.environment = texture;
 
-        // // load in red, green and blue cubes for orientation -----------------------------
-        const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // green
-        const cube1 = new THREE.Mesh(geometry, material);
-        cube1.position.set(0, 0.2, 0);
-        scene.add(cube1);
-
-        const geometry2 = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-        const material2 = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // red
-        const cube2 = new THREE.Mesh(geometry2, material2);
-        cube2.position.set(0.2, 0, 0);
-        scene.add(cube2);
-
-        const geometry3 = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-        const material3 = new THREE.MeshBasicMaterial({ color: 0x0000ff }); // blue
-        const cube3 = new THREE.Mesh(geometry3, material3);
-        cube3.position.set(0, 0, 0.2);
-        scene.add(cube3);
-
+        /*           // // load in red, green and blue cubes for orientation -----------------------------
+          const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+          const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // green
+          const cube1 = new THREE.Mesh(geometry, material);
+          cube1.position.set(1, 1.2, 1);
+          scene.add(cube1);
+  
+          const geometry2 = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+          const material2 = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // red
+          const cube2 = new THREE.Mesh(geometry2, material2);
+          cube2.position.set(1.2, 1, 1);
+          scene.add(cube2);
+  
+          const geometry3 = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+          const material3 = new THREE.MeshBasicMaterial({ color: 0x0000ff }); // blue
+          const cube3 = new THREE.Mesh(geometry3, material3);
+          cube3.position.set(2, 2, 0.2);
+          scene.add(cube3); */
         render();
 
         // load in models ---------------------------------------------------------------
@@ -81,7 +81,10 @@ function initThree() {
             //penguin.rotation.set(0, (-10 / 180) * Math.PI, 0);
             scene.add(penguin);
             threeCamera.lookAt(penguin.position);
-            //penguin.lookAt(threeCamera)
+
+            setTimeout(() => {
+                loadCaptionContainer();
+            }, 1000);
         });
 
         // Add fortress model for target destination
@@ -93,7 +96,6 @@ function initThree() {
             fortress.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
             scene.add(fortress);
         });
-
 
         var groundTexture = new THREE.TextureLoader().load("./../textures/textureImages/snowTexture3.jpg");
         groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
@@ -148,3 +150,31 @@ function render() {
 
 initThree();
 render();
+
+function loadCaptionContainer() {
+    captionContainer.style.display = "block";
+}
+
+nextButton.addEventListener("click", () => {
+    numOfClicks++;
+    switch (numOfClicks) {
+        case 1:
+            caption.innerHTML = "Seal: I.. I.. I don't know!";
+            //threeCamera.position.x -=1.3;
+            //threeCamera.position.z += 0.5;
+            threeCamera.updateProjectionMatrix();
+            render();
+            break;
+        case 2:
+            caption.innerHTML = "Penguin: You don't know? Are you sure you don't know?";
+            threeCamera.lookAt(penguin.position.x, penguin.position.y, penguin.position.z);
+            render();
+            break;
+        case 3:
+            caption.innerHTML = "Seal: Uhh he's in the forest behind the fortress.";
+            break;
+        default:
+            location.href = "../findSonScene/findSon.html";
+            break;
+    }
+});

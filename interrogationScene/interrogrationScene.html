@@ -18,23 +18,26 @@
     </head>
 
     <body>
-        <div id="caption" class="popup">
-            <button id="next" onclick="location.href = '../findSonScene/findSon.html'">Next</button>
+        <div id="captionContainer" class="popup">
+            <p id="caption">Penguin: Where is my son? I don't see him here!</p>
+            <button id="next">Next</button>
         </div>
         <script type="module" src="./interrogationScene.js"></script>
         <style>
             body {
                 margin: 0;
                 font-family: sans-serif;
+                width: 100vw;
+                font-size: 23px;
             }
 
             .popup {
                 text-align: center;
-                padding: 5% 15%;
                 border-radius: 20px;
                 display: flex;
-                position: absolute;
                 bottom: 0;
+                background-color: rgba(255, 255, 255, 0.5);
+                position: absolute;
             }
 
             button {
@@ -54,9 +57,15 @@
             button:hover {
                 cursor: pointer;
                 text-decoration: underline;
+            }       
+
+            #captionContainer {
+                width: 100vw;
+                display: none;
             }
 
-            #caption {
+            canvas {
+                width: 100vw;
             }
         </style>
     </body>
