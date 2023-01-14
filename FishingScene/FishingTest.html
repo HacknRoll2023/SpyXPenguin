@@ -30,24 +30,25 @@
 
   </head>
   <body>
-    <div id="info">
+    <div id="game_info" class="info">
       <p id="fishCaught">Catch some fish!</p>
       <p><i class="fas fa-fish"></i> <span id="updatefish">0 / 10</span> fish caught</p>
       <p><i class="fas fa-clock"></i> <span id="updatetime">60 seconds left!</span></p>
     </div>
 
-    <div class="mb10">
-      <!-- <button
-        onclick="toggleVideo()"
-        id="trackbutton"
-        class="bx--btn bx--btn--secondary"
-        type="button"
-      >
-        Toggle Video
-      </button> -->
+    <!-- need to fix z-index, not clickable atm -->
+    <div id="help_div" hidden>
+      <div id="help_info" class="info helpToggle"  style="display: none;">
+        <p><b>How to Play</b></p>
+        <p>Use your hand to control the penguin's position on the screen.</p>
+        <p>Close your hand to catch a fish, open your hand to release it into the basket!</p>
+        <p>You can only release fish near to the island on the top right, so your hand must be inside the green box in the video!</p>
+      </div>
+      <div id="help_btn" class="helpToggle">
+        <i class="fas fa-question"></i>
+      </div>
     </div>
 
-    <!-- Video element to show the user video -->
     <video
       hidden="true"
       width="500"
@@ -71,5 +72,28 @@
       async
       src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"
     ></script>
+
+    <script>
+      document.ready = (event) => {
+        var eles = document.getElementsByClassName("helpToggle");
+
+        function toggleHelp() {
+          var info = document.getElementById("help_info");
+          var btn = document.getElementById("help_btn");
+          if (info.style.display = "none") {
+            info.style.display = "block";
+            btn.style.display = "none";
+          } else {
+            info.style.display = "none";
+            btn.style.display = "block";
+          }
+        }
+
+        for (var i = 0; i < eles.length; i++) {
+          eles[i].addEventListener('click', toggleHelp, false);
+        }
+      };
+
+    </script>
   </body>
 </html>
