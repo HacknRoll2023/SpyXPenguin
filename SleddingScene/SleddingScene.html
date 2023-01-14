@@ -35,6 +35,67 @@
         z-index: 10;
         float: left;
       }
+
+      /* Overlays */
+      .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 100;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #overlay-win {
+        display: none;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #overlay-lose {
+        display: none;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #overlay-start {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .overlay-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+      }
+
+      .overlay-content h1 {
+        margin-top: 0;
+      }
+
+      .overlay-content p {
+        margin-bottom: 0;
+      }
+
+      .overlay-content button {
+        padding: 10px 20px;
+        font-size: 20px;
+        border: none;
+        border-radius: 5px;
+        background-color: #333;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      .overlay-content button:hover {
+        background-color: #555;
+      }
     </style>
   </head>
 
@@ -81,9 +142,50 @@
         <div id="movmentDirection"></div>
         <div id="movementStatus"></div>
         <div id="penguinPosition"></div>
+        <div id="penguinLives"></div>
       </div>
 
       <video class="input_video"></video>
+    </div>
+
+    <div id="overlay-start" class="overlay">
+      <div class="overlay-content">
+        <h1>Sledding to the Lair</h1>
+        <p>
+          Use your hands to control the penguin and get to the lair before the
+          time runs out!
+        </p>
+        <p>
+          <button
+            id="startButton"
+            onclick="gameState = 'playing'; document.getElementById('overlay-start').style.display = 'none';"
+          >
+            Start
+          </button>
+        </p>
+      </div>
+    </div>
+
+    <div id="overlay-lose" class="overlay">
+      <div class="overlay-content">
+        <h1>Game Over</h1>
+        <p>
+          <button id="startButton" onclick="location.reload();">
+            Play Again
+          </button>
+        </p>
+      </div>
+    </div>
+
+    <div id="overlay-win" class="overlay">
+      <div class="overlay-content">
+        <h1>You Win!</h1>
+        <p>
+          <button id="startButton" onclick="location.reload();">
+            Play Again
+          </button>
+        </p>
+      </div>
     </div>
 
     <script type="module">
@@ -104,13 +206,67 @@
       var movementStatus = "stopped";
 
       const maxAcceleration = 0.002;
-      const deceleartion = 0.0015;
-      const maxSpeed = 0.07;
+      const deceleartion = 0.0025;
+      const maxSpeed = 0.1;
 
       var targetPosition = {
-        x: 43,
-        z: 15,
+        x: 27,
+        z: 23,
       };
+
+      // var targetPosition = {
+      //   x: 17,
+      //   z: 13,
+      // };
+
+      var numTrees = 30;
+
+      var iceObstacleLocations = [];
+
+      // Generate random iceObstacle locations within x:[0, 35] and z:[0, 35], but not within 5 units of the target
+      var distFromFrontOfTarget = 16;
+      var distFromBackOfTarget = 8;
+      var iceObstacleRange = {
+        x: [
+          targetPosition.x - distFromFrontOfTarget,
+          targetPosition.x + distFromBackOfTarget,
+        ],
+        z: [
+          targetPosition.z - distFromFrontOfTarget,
+          targetPosition.z + distFromBackOfTarget,
+        ],
+      };
+
+      for (var i = 0; i < numTrees; i++) {
+        var iceObstacleLocation = {
+          x: Math.floor(
+            Math.random() * (iceObstacleRange.x[1] - iceObstacleRange.x[0]) +
+              iceObstacleRange.x[0]
+          ),
+          z: Math.floor(
+            Math.random() * (iceObstacleRange.z[1] - iceObstacleRange.z[0]) +
+              iceObstacleRange.z[0]
+          ),
+        };
+
+        while (
+          Math.abs(iceObstacleLocation.x - targetPosition.x) < 3.5 ||
+          Math.abs(iceObstacleLocation.z - targetPosition.z) < 3.5
+        ) {
+          iceObstacleLocation = {
+            x: Math.floor(
+              Math.random() * (iceObstacleRange.x[1] - iceObstacleRange.x[0]) +
+                iceObstacleRange.x[0]
+            ),
+            z: Math.floor(
+              Math.random() * (iceObstacleRange.z[1] - iceObstacleRange.z[0]) +
+                iceObstacleRange.z[0]
+            ),
+          };
+        }
+
+        iceObstacleLocations.push(iceObstacleLocation);
+      }
 
       // Controls variables
       var leftHandPosition = {
@@ -341,20 +497,50 @@
             });
 
             // Add fortress model for target destination
-            const glbPath4 = "IceFortress.gltf";
+            const glbPath4 = "IceFortressInhabited.gltf";
+            loader.load(glbPath4, function (gltf) {
+              console.log(gltf);
+              fortress = gltf.scene;
+              fortress.scale.set(0.2, 0.2, 0.2);
+              fortress.position.set(targetPosition.x, 0.4, targetPosition.z);
+              fortress.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
+              scene.add(fortress);
+            });
 
-            // // Alert model for target destination
-            // const glbPath3 = "Alert.gltf";
-            // loader.load(glbPath3, function (gltf) {
-            //   console.log(gltf);
-            //   alertModel = gltf.scene;
-            //   alertModel.scale.set(0.6, 0.6, 0.6);
-            //   alertModel.position.set(targetPosition.x, 0.3, targetPosition.z);
-            //   alertModel.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
-            //   scene.add(alertModel);
-            // });
+            // Alert model for target destination
+            const glbPath3 = "Alert.gltf";
+            loader.load(glbPath3, function (gltf) {
+              console.log(gltf);
+              alertModel = gltf.scene;
+              alertModel.scale.set(0.6, 0.6, 0.6);
+              alertModel.position.set(targetPosition.x, 0.5, targetPosition.z);
+              alertModel.rotation.set(0, (-10 - 90 / 180) * Math.PI, 0);
+              scene.add(alertModel);
+            });
 
-            // Scenery
+            // Trees
+            const glbPath5 = "IceObstacle.gltf";
+            loader.load(glbPath5, function (gltf) {
+              console.log(gltf);
+              var iceObstacle = gltf.scene;
+              iceObstacle.scale.set(0.1, 0.1, 0.1);
+
+              // Add all iceObstacles to the scene
+              for (var i = 0; i < numTrees; i++) {
+                let iceObstacle2 = gltf.scene.clone();
+                iceObstacle2.position.set(
+                  iceObstacleLocations[i].x,
+                  0,
+                  iceObstacleLocations[i].z
+                );
+
+                // random rotation
+                var randomRotation = Math.random() * Math.PI * 2;
+                iceObstacle2.rotation.set(0, randomRotation, 0);
+
+                scene.add(iceObstacle2);
+              }
+            });
 
             var groundTexture = new THREE.TextureLoader().load(
               "./../textures/textureImages/snowTexture3.jpg"
@@ -414,6 +600,10 @@
       }
 
       // Game logic ------------------------------------------------------------
+      var iceObstacleRadius = 0.1;
+      var penguinRadius = 0.1;
+      var targetRadius = 3;
+
       function updateGame() {
         if (!sceneLoaded) {
           return;
@@ -555,6 +745,56 @@
         penguin.position.x += penguinSpeed * Math.sin(movmentDirection);
         penguin.position.z += penguinSpeed * Math.cos(movmentDirection);
 
+        // Check game state -------------------------------------------------------
+        // Check if the penguin has reached the target
+        if (
+          Math.abs(penguin.position.x - targetPosition.x) < 4 &&
+          Math.abs(penguin.position.z - targetPosition.z) < 4
+        ) {
+
+          console.log("z" + penguin.position.z);
+          console.log("x" + penguin.position.x);
+
+          gameState = "won";
+
+          // Overlay that brings them to the next page on click
+          document.getElementById("overlay-win").style.display = "block";
+        } else {
+          // Check for collisions with the iceObstacleLocations
+          for (let i = 0; i < iceObstacleLocations.length; i++) {
+            if (
+              Math.abs(penguin.position.x - iceObstacleLocations[i].x) < 0.9 &&
+              Math.abs(penguin.position.z - iceObstacleLocations[i].z) < 0.9
+            ) {
+              // reduce lives by 1
+              penguinLives -= 1;
+
+              if (penguinLives == 0) {
+                // Overlay that brings them to the next page on click
+                document.getElementById("overlay-lose").style.display = "block";
+
+                gameState = "lost";
+              } else {
+                // Reset the penguin position to start
+                penguin.position.x = 0;
+                penguin.position.z = 0;
+
+                // Reset the penguin rotation
+                penguin.rotation.y = 0;
+
+                // Reset the movmentDirection and penguinSpeed
+                penguinSpeed = 0;
+                movmentDirection = 0;
+
+                // Reset the movementStatus
+                movementStatus = "stopped";
+
+
+              }
+            }
+          }
+        }
+
         // Update the camera to be on the behind side of the penguin
         threeCamera.position.x =
           penguin.position.x + 0.5 * Math.sin(penguin.rotation.y - Math.PI / 2);
@@ -572,6 +812,7 @@
           penguin.position.z - targetPosition.z
         );
 
+        // CAMERA CONTROLS -------------------------------------------------------
         // Update the camera to look at the penguin
         threeControls.target.set(penguin.position.x, 0.25, penguin.position.z);
 
@@ -581,13 +822,18 @@
         // Render the scene
         render();
 
-        // Display penguinSpeed and movmentDirection
+        // Display penguinSpeed and movmentDirection --------------------------------
         document.getElementById("penguinSpeed").innerHTML = penguinSpeed;
         document.getElementById("movmentDirection").innerHTML =
           movmentDirection;
         document.getElementById("movementStatus").innerHTML = movementStatus;
         document.getElementById("penguinPosition").innerHTML =
           "x: " + penguin.position.x + " z: " + penguin.position.z;
+
+        // Display penguinLives ---------------------------------------------------
+
+        document.getElementById("penguinLives").innerHTML =
+          "lives: " + penguinLives;
       }
 
       // Initialize ------------------------------------------------------------
