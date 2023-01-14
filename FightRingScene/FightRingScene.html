@@ -188,7 +188,7 @@
       // Game variables ------------------------------------------------------------
       var gameState = "playing";
 
-      var penguinLives = 3;
+      var penguinLives = 5;
 
       // Scene variables
       var penguinPosition = {
@@ -227,7 +227,7 @@
 
       var maxSeals = 5;
       var numSeals = 0;
-      var requiredSealKills = 20;
+      var requiredSealKills = 15;
       var sealPositions = [];
       /*
         {
@@ -553,7 +553,7 @@
             });
 
             // Seals
-            const glbPath5 = "SealAngry.gltf";
+            const glbPath5 = "SealLeftRotate.gltf";
             loader.load(glbPath5, function (gltf) {
               var sealEnemy = gltf.scene;
               sealEnemy.scale.set(0.1, 0.1, 0.1);
@@ -803,6 +803,8 @@
 
               seal.rotation = Math.atan2(-x, -z);
 
+              penguinLives--;
+
               console.log("Seal hit the penguin");
             }
           }
@@ -950,8 +952,8 @@
         // // camera variables
         // outputHTML += "cameraLookAtPoint: " + cameraLookAtPoint + "<br>";
 
-        // game variables
-        outputHTML += "penguinRotation: " + penguinRotation + "<br>";
+        // game variables 
+        outputHTML += "requiredSealKills: " + requiredSealKills + "<br>";
 
         // Display the output
         document.getElementById("output-debug").innerHTML = outputHTML;
