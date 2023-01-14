@@ -27,7 +27,7 @@
             <h2>Help to find the baby penguin!</h2>
             <div class="row">
                 <div class="col">
-                    <p>Pinch to zoom in.</p>
+                    <p>Using your left hand, pinch to zoom in.</p>
                     <img src="../images/zoomin.png" alt="Pinch" />
                 </div>
                 <div class="col">
@@ -36,9 +36,10 @@
                 </div>
             </div>
             <p>To pan the scene, while pinching move up, down, left or right.</p>
+            <p>Use your left hand!!</p>
             <button id="close">Let's Go!</button>
         </div>
-        <div id="success" class="popup center">
+        <div id="success" class="popup">
             <h2>Success!</h2>
             <button onclick="location.href = '../'">Next</button>
         </div>
@@ -57,6 +58,15 @@
 
             #success {
                 display: none;
+                text-align: center;
+                background-color: black;
+                color: white;
+                padding: 5% 10%;
+                border-radius: 20px;
+                max-width: fit-content;
+                position: fixed;
+                bottom: 0;
+                right: 0;
             }
 
             #instructions {

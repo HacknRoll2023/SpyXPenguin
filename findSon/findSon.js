@@ -53,7 +53,7 @@ function init() {
     document.body.appendChild(container);
 
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 20);
-    camera.position.set(10, 2, 8);
+    camera.position.set(10, 5, 8);
 
     scene = new THREE.Scene();
     clock = new THREE.Clock();
@@ -146,24 +146,6 @@ function render() {
     renderer.render(scene, camera);
 }
 
-// Game mechanics ---------------------------------------------------------------
-// Get user input from keyboard
-document.addEventListener("keydown", (event) => {
-    const keyName = event.key;
-
-    if (keyName === " ") {
-        spaceCount++;
-
-        if (spaceCount > 1) {
-            //document.getElementById("instruction1").innerHTML = "Let's go borrow a fishing rod from Mr. Seal!";
-        }
-
-        if (spaceCount > 2) {
-            //window.location.href = "./MrSealScene.html";
-        }
-    }
-});
-
 function onResults(results) {
     // Mirror the video feed and draw the results on the canvas
     canvasCtx.save();
@@ -177,7 +159,7 @@ function onResults(results) {
     canvasCtx.fillText(">", canvasElement.clientWidth, canvasElement.clientHeight/2);
     canvasCtx.fillText("^", canvasElement.clientWidth/2, 30);
     canvasCtx.fillText("v", canvasElement.clientWidth/2, 170);
-    
+
     console.log(canvasElement.clientLeft)
 
     if (results.multiHandLandmarks) {
@@ -225,7 +207,7 @@ function onResults(results) {
                     render();
                 } else {
                     // pinch action
-                    if (camera.zoom < 10) camera.zoom *= 2;
+                    if (camera.zoom < 34) camera.zoom *= 2;
 
                     // move up down left right
                     if (results.multiHandLandmarks[i][4].x <= 0.2) {
@@ -265,12 +247,14 @@ function onResults(results) {
                     if (frustum.containsPoint(penguin.position)) {
                         // Do something with the position...
                         console.log("found penguin");
+                        //foundPenguin = true;
                         
                         setTimeout(function() {
                             success.style.display = "block";
                             //your code to be executed after 1 second
                           }, 2500);
                     } else {
+                        //foundPenguin = false;
                         console.log("out of view")
                     }
                 }
