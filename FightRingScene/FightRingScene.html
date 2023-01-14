@@ -238,7 +238,7 @@
           isAlive: true,
         }
       */
-      var sealSpeed = 0.1;
+      var sealSpeed = 0.03;
       var sealRadius = 0.5;
 
       // initialize sealPositions
@@ -638,6 +638,7 @@
 
           // set the seal to be active
           sealPositions[i].isActive = true;
+          sealPositions[i].rotation = Math.atan2(-x, -z);
         }
       }
 
@@ -679,10 +680,10 @@
           crossHairAngleOffset.x;
 
           // Update the penguin's rotation
-          if (rightHandPosition.pip.x > 0.8) {
+          if (rightHandPosition.pip.x > 0.75) {
             // Turn left
             penguinRotation += 0.1;
-          } else if (rightHandPosition.pip.x < 0.2) {
+          } else if (rightHandPosition.pip.x < 0.25) {
             // Turn right
             penguinRotation -= 0.1;
           } else {
@@ -722,7 +723,7 @@
 
           // Shooting ---
           // If shooting, and there are snowballs left, shoot one
-          if (isShooting && numSnowballs < maxSnowballs) {
+          if (isShooting && numSnowballs < maxSnowballs - 1) {
             // Find a snowball positions that is not active
             let snowball = snowballPositions.find((s) => !s.isActive);
 
@@ -781,21 +782,26 @@
                 penguin.position.z + (sealRadius + penguinHitRadius)
             ) {
               // Seal hit the penguin
-              seal.isActive = false;
-              numSeals--;
+              // pick a random rotation
+              var randomRotation = Math.random() * 2 * Math.PI;
 
-              // Reset seal position
-              seals[seal.idx].position.set(
-                Math.random() * 10 - 5,
-                0,
-                Math.random() * 10 - 5
-              );
+              // pick a random distance from the center between 8 and 10
+              var randomDistance = Math.random() * 2 + 8;
 
-              // Reset seal rotation to face penguin
-              seals[seal.idx].rotation.y = Math.atan2(
-                penguin.position.x - seals[seal.idx].position.x,
-                penguin.position.z - seals[seal.idx].position.z
-              );
+              // calculate the x and z position
+              var x = Math.cos(randomRotation) * randomDistance;
+              var z = Math.sin(randomRotation) * randomDistance;
+
+              // set the position of the seal
+              seals[seal.idx].position.set(x, 0.1, z);
+
+              // set the rotation of the seal to face the center
+              seals[seal.idx].rotation.y = Math.atan2(-x, -z);
+
+              // increment numSeals
+              numSeals++;
+
+              seal.rotation = Math.atan2(-x, -z);
 
               console.log("Seal hit the penguin");
             }
@@ -835,19 +841,16 @@
                   // Update the number of snowballs
                   numSnowballs--;
 
-                  // Seal ----------------
-                  // Update the seal's position
-                  seals[seal.idx].position.set(
-                    Math.random() * 10 - 5,
-                    0,
-                    Math.random() * 10 - 5
-                  );
-
                   // Update the snowball's position
                   snowballs[snowball.idx].position.set(0, -10, 0);
 
+                  // Seal ----------------
+                  // Update the seal's position
+                  seals[seal.idx].position.set(2, -0.5, 2);
+
                   // Set seal to inactive
                   seal.isActive = false;
+                  seal.rotation = seals[seal.idx].rotation.y;
 
                   // Update the number of seals
                   numSeals--;
@@ -861,6 +864,34 @@
                   } else {
                     if (requiredSealKills > numSeals && numSeals < maxSeals) {
                       // Add a seal TODO: Add a seal
+                      // find an inactive seal
+                      const inactiveSeal = sealPositions.find(
+                        (seal) => !seal.isActive
+                      );
+
+                      // Set the seal to active
+                      inactiveSeal.isActive = true;
+
+                      // pick a random rotation
+                      var randomRotation = Math.random() * 2 * Math.PI;
+
+                      // pick a random distance from the center between 8 and 10
+                      var randomDistance = Math.random() * 2 + 8;
+
+                      // calculate the x and z position
+                      var x = Math.cos(randomRotation) * randomDistance;
+                      var z = Math.sin(randomRotation) * randomDistance;
+
+                      // set the position of the seal
+                      seals[inactiveSeal.idx].position.set(x, 0.1, z);
+
+                      // set the rotation of the seal to face the center
+                      seals[inactiveSeal.idx].rotation.y = Math.atan2(-x, -z);
+
+                      // increment numSeals
+                      numSeals++;
+
+                      inactiveSeal.rotation = Math.atan2(-x, -z);
                     }
                   }
                 }
@@ -900,23 +931,27 @@
 
         // // Display rotation and shooting --------------------------------
         var outputHTML = "";
-        // gesture variables
-        outputHTML += "rightHandOpen: " + rightHandOpen + "<br>";
-        outputHTML += "firstRightHandOpen: " + firstRightHandOpen + "<br>";
 
-        // hand position variables
-        outputHTML +=
-          "rightHandPosition.pip.x: " + rightHandPosition.pip.x + "<br>";
-        outputHTML +=
-          "rightHandPosition.pip.y: " + rightHandPosition.pip.y + "<br>";
-        outputHTML += "rightHandOpen: " + rightHandOpen + "<br>";
+        // // gesture variables
+        // outputHTML += "rightHandOpen: " + rightHandOpen + "<br>";
+        // outputHTML += "firstRightHandOpen: " + firstRightHandOpen + "<br>";
+
+        // // hand position variables
+        // outputHTML +=
+        //   "rightHandPosition.pip.x: " + rightHandPosition.pip.x + "<br>";
+        // outputHTML +=
+        //   "rightHandPosition.pip.y: " + rightHandPosition.pip.y + "<br>";
+        // outputHTML += "rightHandOpen: " + rightHandOpen + "<br>";
+
+        // // game variables
+        // outputHTML += "penguinRotation: " + penguinRotation + "<br>";
+        // outputHTML += "shooting: " + isShooting + "<br>";
+
+        // // camera variables
+        // outputHTML += "cameraLookAtPoint: " + cameraLookAtPoint + "<br>";
 
         // game variables
         outputHTML += "penguinRotation: " + penguinRotation + "<br>";
-        outputHTML += "shooting: " + isShooting + "<br>";
-
-        // camera variables
-        outputHTML += "cameraLookAtPoint: " + cameraLookAtPoint + "<br>";
 
         // Display the output
         document.getElementById("output-debug").innerHTML = outputHTML;
