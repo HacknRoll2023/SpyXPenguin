@@ -151,7 +151,7 @@ nextButton.addEventListener("click", () => {
             caption.innerHTML = "Seal: Give us fishes... Or your son is NEVER coming back.";
             break;
         default:
-            location.href = "../FishingScene/FishingTest.html"; 
+            location.href = "../FishingScene/FishingScene.html"; 
             break;
     }
 });
