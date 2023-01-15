@@ -5,6 +5,15 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
+var startButton = document.getElementById("start");
+
+start.addEventListener("click", () => {
+    startGame();
+    document.getElementById("help_info").style.display = "none";
+    document.getElementById("help_btn").style.display = "none";
+});
+
+
 // Loaders
 const dracoLoader = new DRACOLoader();
 const loader = new GLTFLoader().setPath("../models/");
