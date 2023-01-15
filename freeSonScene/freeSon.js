@@ -23,7 +23,7 @@ var isRight = true
 // resetButton.addEventListener("click", resetCamera);
 
 endSceneClose.addEventListener("click", () => {
-    location.href = "../";  //TODO
+    location.href = "../FinalScene/FinalScene.html";  
 });
 
 closeButton.addEventListener("click", () => {
