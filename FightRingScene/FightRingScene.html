@@ -723,42 +723,45 @@
 
           // Shooting ---
           // If shooting, and there are snowballs left, shoot one
-          if (isShooting && numSnowballs < maxSnowballs - 1) {
+          if (isShooting && numSnowballs < maxSnowballs) {
             // Find a snowball positions that is not active
             let snowball = snowballPositions.find((s) => !s.isActive);
 
-            // Set the snowball's position to the penguin's position
-            snowballs[snowball.idx].position.set(
-              penguin.position.x,
-              penguin.position.y + 0.1,
-              penguin.position.z
-            );
+            // if there are no snowballs left, return
+            if (snowball) {
+              // Set the snowball's position to the penguin's position
+              snowballs[snowball.idx].position.set(
+                penguin.position.x,
+                penguin.position.y + 0.1,
+                penguin.position.z
+              );
 
-            console.log(snowballs[snowball.idx].position);
+              console.log(snowballs[snowball.idx].position);
 
-            // Set the snowball's rotation the angle between the penguin and the crosshair
-            snowballs[snowball.idx].rotation.y =
-              penguinRotation + crossHairAngleOffset.x;
-            snowball.rotation = penguinRotation + crossHairAngleOffset.x;
+              // Set the snowball's rotation the angle between the penguin and the crosshair
+              snowballs[snowball.idx].rotation.y =
+                penguinRotation + crossHairAngleOffset.x;
+              snowball.rotation = penguinRotation + crossHairAngleOffset.x;
 
-            // Set the snowball's velocity
-            snowball.velocity = {
-              x:
-                Math.sin(penguinRotation + crossHairAngleOffset.x) *
-                snowballSpeed,
-              z:
-                Math.cos(penguinRotation + crossHairAngleOffset.x) *
-                snowballSpeed,
-            };
+              // Set the snowball's velocity
+              snowball.velocity = {
+                x:
+                  Math.sin(penguinRotation + crossHairAngleOffset.x) *
+                  snowballSpeed,
+                z:
+                  Math.cos(penguinRotation + crossHairAngleOffset.x) *
+                  snowballSpeed,
+              };
 
-            // Set the snowball's active state to true
-            snowball.isActive = true;
+              // Set the snowball's active state to true
+              snowball.isActive = true;
 
-            // Increment the number of snowballs
-            numSnowballs++;
+              // Increment the number of snowballs
+              numSnowballs++;
 
-            console.log("Shot snowball:", snowball.idx);
-            console.log(snowballs[snowball.idx].position);
+              console.log("Shot snowball:", snowball.idx);
+              console.log(snowballs[snowball.idx].position);
+            }
           }
         }
 
@@ -871,37 +874,35 @@
                     document.getElementById("overlay-win").style.display =
                       "block";
                   } else {
-                    if (requiredSealKills >= numSeals && numSeals < maxSeals) {
-                      // Add a seal TODO: Add a seal
-                      // find an inactive seal
-                      const inactiveSeal = sealPositions.find(
-                        (seal) => !seal.isActive
-                      );
+                    // Add a seal TODO: Add a seal
+                    // find an inactive seal
+                    const inactiveSeal = sealPositions.find(
+                      (seal) => !seal.isActive
+                    );
 
-                      // Set the seal to active
-                      inactiveSeal.isActive = true;
+                    // Set the seal to active
+                    inactiveSeal.isActive = true;
 
-                      // pick a random rotation
-                      var randomRotation = Math.random() * 2 * Math.PI;
+                    // pick a random rotation
+                    var randomRotation = Math.random() * 2 * Math.PI;
 
-                      // pick a random distance from the center between 8 and 10
-                      var randomDistance = Math.random() * 2 + 8;
+                    // pick a random distance from the center between 8 and 10
+                    var randomDistance = Math.random() * 2 + 8;
 
-                      // calculate the x and z position
-                      var x = Math.cos(randomRotation) * randomDistance;
-                      var z = Math.sin(randomRotation) * randomDistance;
+                    // calculate the x and z position
+                    var x = Math.cos(randomRotation) * randomDistance;
+                    var z = Math.sin(randomRotation) * randomDistance;
 
-                      // set the position of the seal
-                      seals[inactiveSeal.idx].position.set(x, 0.1, z);
+                    // set the position of the seal
+                    seals[inactiveSeal.idx].position.set(x, 0.1, z);
 
-                      // set the rotation of the seal to face the center
-                      seals[inactiveSeal.idx].rotation.y = Math.atan2(-x, -z);
+                    // set the rotation of the seal to face the center
+                    seals[inactiveSeal.idx].rotation.y = Math.atan2(-x, -z);
 
-                      // increment numSeals
-                      numSeals++;
+                    // increment numSeals
+                    numSeals++;
 
-                      inactiveSeal.rotation = Math.atan2(-x, -z);
-                    }
+                    inactiveSeal.rotation = Math.atan2(-x, -z);
                   }
                 }
               }
