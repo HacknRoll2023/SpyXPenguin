@@ -52,6 +52,7 @@ button {
 
 #help_info {
 	background-color: beige;
+	opacity: 50%;
 	position: absolute;
 	top: 0px;
 	right: 0px;
@@ -67,8 +68,10 @@ button {
 	-ms-user-select: none;
 	user-select: none;
 	pointer-events: none;
-	z-index: 2; 
+	z-index: 2;
+	display: block;
 }
+
 #help_btn {
 	background-color: beige;
 	position: absolute;
@@ -83,7 +86,7 @@ button {
 	-webkit-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
-	pointer-events: none;
+	cursor: pointer;
 	z-index: 2;
 }
 #help_btn:hover {
@@ -94,4 +97,3 @@ button {
 a, button, input, select {
 	pointer-events: auto;
 }
-
