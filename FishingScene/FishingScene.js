@@ -6,6 +6,7 @@ import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
 var startButton = document.getElementById("start");
+var win = false;
 
 start.addEventListener("click", () => {
     startGame();
@@ -46,7 +47,7 @@ class Fish {
 var gameState = "idle";             // idle, play, end
 const clock = new THREE.Clock();
 const maxtime = 60;
-const numTargetFish = 10;
+const numTargetFish = 5;
 var numFishCaught = 0;
 
 // To update values and text on html
@@ -170,6 +171,12 @@ function checkHand() {
         showFishDropOff();
         penguinHasFish = false;
         numFishCaught += 1;
+        if (numFishCaught >= 5) win = true;
+
+        if (win) {
+            setTimeout(() => location.href = '../sealNoReturnSon/sealNoReturnSon.html', 2000);
+        }
+
         console.log(numFishCaught);
     }
     if (handLabel == "closed" && !penguinHasFish) {
