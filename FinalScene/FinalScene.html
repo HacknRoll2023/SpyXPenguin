@@ -96,6 +96,42 @@
       .overlay-content button:hover {
         background-color: #555;
       }
+
+      #instructions {
+        display: show;
+      }
+
+      .popup {
+        text-align: center;
+        background-color: rgba(255, 255, 255, 0.75);
+        color: black;
+        padding: 5% 15%;
+        border: 2px black solid;
+        border-radius: 20px;
+        display: none;
+        position: absolute;
+      }
+
+      .row {
+        display: flex;
+        flex-direction: row;
+      }
+
+      .col {
+        flex-direction: column;
+      }
+
+      .center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
     </style>
   </head>
 
@@ -150,18 +186,21 @@
 
     <div id="overlay-start" class="overlay">
       <div class="overlay-content">
-        <h1>Sledding to the Lair</h1>
+        <h1>The Way Home</h1>
         <h2>Get to the lair before the lair before time runs out!!</h2>
-            <div class="row">
-                <div class="col">
-                    <p>Raise your hand above the other to move in that direction.</p>
-                    <img src="../images/turnHands.png" alt="turn like you steer a car" />
-                </div>
-                <div class="col">
-                    <p>Hands out of camera range to stop</p>
-                    <img src="../images/noHands.png" alt="Remvoe hands" />
-                </div>
-            </div>
+        <div class="row popup-center">
+          <div class="col">
+            <p>Raise your hand above the other to move in that direction.</p>
+            <img
+              src="../images/turnHands.png"
+              alt="turn like you steer a car"
+            />
+          </div>
+          <div class="col">
+            <p>Hands out of camera range to stop</p>
+            <img src="../images/noHands.png" alt="Remvoe hands" />
+          </div>
+        </div>
         <p>
           <button
             id="startButton"
@@ -188,7 +227,10 @@
       <div class="overlay-content">
         <h1>You Win!</h1>
         <p>
-          <button id="continue" onclick="location.href= '../theEnd/theEnd.html';">
+          <button
+            id="continue"
+            onclick="location.href= '../theEnd/theEnd.html';"
+          >
             Continue
           </button>
         </p>
@@ -758,7 +800,6 @@
           Math.abs(penguin.position.x - targetPosition.x) < 3 &&
           Math.abs(penguin.position.z - targetPosition.z) < 3
         ) {
-
           console.log("z" + penguin.position.z);
           console.log("x" + penguin.position.x);
 
@@ -795,8 +836,6 @@
 
                 // Reset the movementStatus
                 movementStatus = "stopped";
-
-
               }
             }
           }
